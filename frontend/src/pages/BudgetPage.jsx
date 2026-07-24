@@ -242,6 +242,86 @@ function ContactCombobox({ selected, onSelect }) {
   );
 }
 
+/* ─── Confirm Sale Modal ─────────────────────────────────────── */
+function ConfirmSaleModal({ onConfirm, onCancel, confirming }) {
+  const [saleType, setSaleType] = useState('externa');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+        <div>
+          <h3 className="text-lg font-bold text-slate-100 mb-1">✅ Confirmar Venta</h3>
+          <p className="text-sm text-slate-400">
+            Esto generará movimientos de <span className="text-red-400 font-semibold">SALIDA</span> de
+            stock para cada producto del presupuesto. Esta acción no se puede deshacer.
+          </p>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Destino de venta *</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setSaleType('interna')}
+              className={`p-4 rounded-xl border-2 text-sm transition-all flex flex-col items-center gap-1 ${
+                saleType === 'interna'
+                  ? 'border-violet-500 bg-violet-500/10 text-violet-300'
+                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+              }`}
+              id="confirm-sale-interna"
+            >
+              <span className="text-2xl">🏠</span>
+              <span className="font-semibold">Interna</span>
+              <span className="text-xs opacity-70">Residentes</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSaleType('externa')}
+              className={`p-4 rounded-xl border-2 text-sm transition-all flex flex-col items-center gap-1 ${
+                saleType === 'externa'
+                  ? 'border-amber-500 bg-amber-500/10 text-amber-300'
+                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+              }`}
+              id="confirm-sale-externa"
+            >
+              <span className="text-2xl">🌐</span>
+              <span className="font-semibold">Externa</span>
+              <span className="text-xs opacity-70">Ajenos / Colaboradores</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={confirming}
+            className="btn-secondary flex-1 justify-center"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(saleType)}
+            disabled={confirming}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+            id="btn-confirm-sale-submit"
+          >
+            {confirming ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Confirmando…
+              </>
+            ) : (
+              '✅ Confirmar Venta'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main BudgetPage ────────────────────────────────────────── */
 export default function BudgetPage() {
   const [products, setProducts]         = useState([]);
@@ -259,10 +339,24 @@ export default function BudgetPage() {
   const [saving, setSaving]             = useState(false);
   const [saveMsg, setSaveMsg]           = useState('');
 
+  // Saved budget state (for confirm-sale)
+  const [savedBudgetId, setSavedBudgetId]         = useState(null);
+  const [budgetConfirmed, setBudgetConfirmed]     = useState(false);
+  const [showConfirmModal, setShowConfirmModal]   = useState(false);
+  const [confirming, setConfirming]               = useState(false);
+
   useEffect(() => {
     client.get('/products?active=true&page=1&limit=500')
       .then((res) => setProducts(res.data.data));
   }, []);
+
+  /* ── Reset budget state when items cleared ── */
+  function resetBudget() {
+    setItems([]);
+    setSavedBudgetId(null);
+    setBudgetConfirmed(false);
+    setSaveMsg('');
+  }
 
   /* ── item management ── */
   function addItem() {
@@ -286,19 +380,30 @@ export default function BudgetPage() {
     setProductId('');
     setQty('1');
     setUnitPrice('');
+    // Invalidate saved budget when items change
+    setSavedBudgetId(null);
+    setBudgetConfirmed(false);
   }
 
-  function removeItem(idx) { setItems((prev) => prev.filter((_, i) => i !== idx)); }
+  function removeItem(idx) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+    setSavedBudgetId(null);
+    setBudgetConfirmed(false);
+  }
 
   function updateItemQty(idx, val) {
     const n = parseInt(val);
     if (isNaN(n) || n <= 0) return;
     setItems((prev) => prev.map((it, i) => i === idx ? { ...it, qty: n } : it));
+    setSavedBudgetId(null);
+    setBudgetConfirmed(false);
   }
 
   function updateItemPrice(idx, val) {
     const n = parseInt(val);
     setItems((prev) => prev.map((it, i) => i === idx ? { ...it, unitPrice: isNaN(n) ? 0 : n } : it));
+    setSavedBudgetId(null);
+    setBudgetConfirmed(false);
   }
 
   /* ── totals ── */
@@ -313,7 +418,7 @@ export default function BudgetPage() {
     setSaving(true);
     setSaveMsg('');
     try {
-      await client.post('/budgets', {
+      const res = await client.post('/budgets', {
         contact_id:    contact?.id || null,
         client_name:   contact?.name || null,
         client_phone:  contact?.phone1 || null,
@@ -331,12 +436,64 @@ export default function BudgetPage() {
           unit_price:   it.unitPrice,
         })),
       });
+      setSavedBudgetId(res.data.id);
       setSaveMsg('✓ Presupuesto guardado correctamente');
-      setTimeout(() => setSaveMsg(''), 4000);
+      setTimeout(() => setSaveMsg(''), 5000);
     } catch (err) {
       setSaveMsg('Error al guardar: ' + (err.response?.data?.error || err.message));
     } finally {
       setSaving(false);
+    }
+  }
+
+  /* ── confirm sale ── */
+  async function handleConfirmSale(saleType) {
+    // If not yet saved, save first
+    let budgetId = savedBudgetId;
+    if (!budgetId) {
+      setSaving(true);
+      try {
+        const res = await client.post('/budgets', {
+          contact_id:    contact?.id || null,
+          client_name:   contact?.name || null,
+          client_phone:  contact?.phone1 || null,
+          subtotal,
+          delivery_cost: deliveryCost,
+          total,
+          with_delivery: withDelivery,
+          distance_km:   distance || null,
+          notes,
+          items: items.map((it) => ({
+            product_id:   it.product.id,
+            product_name: it.product.name,
+            sku:          it.product.sku,
+            quantity:     it.qty,
+            unit_price:   it.unitPrice,
+          })),
+        });
+        budgetId = res.data.id;
+        setSavedBudgetId(budgetId);
+      } catch (err) {
+        setSaveMsg('Error al guardar: ' + (err.response?.data?.error || err.message));
+        setSaving(false);
+        setShowConfirmModal(false);
+        return;
+      } finally {
+        setSaving(false);
+      }
+    }
+
+    setConfirming(true);
+    try {
+      await client.post(`/budgets/${budgetId}/confirm-sale`, { sale_type: saleType });
+      setBudgetConfirmed(true);
+      setShowConfirmModal(false);
+      setSaveMsg(`✅ Venta confirmada — stock descontado correctamente`);
+    } catch (err) {
+      setSaveMsg('Error al confirmar venta: ' + (err.response?.data?.error || err.message));
+      setShowConfirmModal(false);
+    } finally {
+      setConfirming(false);
     }
   }
 
@@ -356,12 +513,20 @@ export default function BudgetPage() {
         }
       `}</style>
 
+      {showConfirmModal && (
+        <ConfirmSaleModal
+          onConfirm={handleConfirmSale}
+          onCancel={() => setShowConfirmModal(false)}
+          confirming={confirming}
+        />
+      )}
+
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between no-print">
           <h2 className="text-xl font-bold text-slate-100">💰 Presupuesto para Cliente</h2>
-          <div className="flex gap-2">
-            {items.length > 0 && (
+          <div className="flex gap-2 flex-wrap justify-end">
+            {items.length > 0 && !budgetConfirmed && (
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -371,6 +536,26 @@ export default function BudgetPage() {
                 {saving ? '⏳ Guardando…' : '💾 Guardar'}
               </button>
             )}
+
+            {/* Confirm sale button */}
+            {items.length > 0 && !budgetConfirmed && (
+              <button
+                onClick={() => setShowConfirmModal(true)}
+                disabled={saving || confirming}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all active:scale-95 disabled:opacity-50"
+                id="btn-confirm-sale"
+              >
+                ✅ Confirmar Venta
+              </button>
+            )}
+
+            {/* Confirmed badge */}
+            {budgetConfirmed && (
+              <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-semibold text-sm">
+                ✅ Venta confirmada
+              </span>
+            )}
+
             <button
               onClick={handlePrint}
               disabled={items.length === 0}
@@ -387,7 +572,7 @@ export default function BudgetPage() {
         </div>
 
         {saveMsg && (
-          <div className={`no-print p-3 rounded-lg text-sm border ${saveMsg.startsWith('✓') ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+          <div className={`no-print p-3 rounded-lg text-sm border ${saveMsg.startsWith('✓') || saveMsg.startsWith('✅') ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
             {saveMsg}
           </div>
         )}
@@ -533,9 +718,17 @@ export default function BudgetPage() {
                   </div>
                 </div>
                 <p className="text-2xl font-extrabold text-slate-100 mt-2">PRESUPUESTO</p>
+                {budgetConfirmed && (
+                  <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                    ✅ Venta confirmada
+                  </span>
+                )}
               </div>
               <div className="text-right text-sm text-slate-400 space-y-1">
                 <p>Fecha: <span className="text-slate-200 font-medium">{todayLabel()}</span></p>
+                {savedBudgetId && (
+                  <p>Nro: <span className="text-slate-200 font-medium">#{savedBudgetId}</span></p>
+                )}
                 {contact && (
                   <>
                     <p>Cliente: <span className="text-slate-200 font-medium">{contact.name}</span></p>
