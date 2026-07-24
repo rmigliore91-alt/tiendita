@@ -45,7 +45,9 @@ const BASE_SELECT = `
   SELECT
     m.id, m.type, m.quantity, m.unit_price, m.total_price,
     m.sale_type, m.notes, m.created_at,
+    m.supplier_delivery_cost, m.delivery_cost_share, m.cost_price_at_entry,
     p.id AS product_id, p.name AS product_name, p.sku,
+    p.sale_price, p.cost_price,
     c.id AS category_id, c.name AS category_name,
     u.id AS user_id, u.name AS user_name
   FROM movements m
@@ -95,13 +97,25 @@ async function listMovements(req, res, next) {
 
 /**
  * POST /api/movements
- * Body: { product_id, type, quantity, unit_price, notes }
- * Updates product stock_current atomically in a transaction.
+ * Body: { product_id, type, quantity, unit_price, notes, sale_type?,
+ *         supplier_delivery_cost?, delivery_cost_share? }
+ *
+ * For ENTRADA movements:
+ *   - supplier_delivery_cost: total freight paid to supplier for the whole purchase batch
+ *   - delivery_cost_share: the proportional freight amount assigned to THIS specific item
+ *                          (calculated by the frontend based on subtotal ratios)
+ *   - cost_price_at_entry = unit_price + ceil(delivery_cost_share / quantity)
+ *   - products.cost_price is updated to cost_price_at_entry automatically
+ *
+ * Updates product stock_current and cost_price atomically in a transaction.
  */
 async function createMovement(req, res, next) {
   const client = await pool.connect();
   try {
-    const { product_id, type, quantity, unit_price, notes, sale_type } = req.body;
+    const {
+      product_id, type, quantity, unit_price, notes, sale_type,
+      supplier_delivery_cost, delivery_cost_share,
+    } = req.body;
 
     if (!product_id || !type || !quantity) {
       return res.status(400).json({ error: 'Producto, tipo y cantidad son requeridos' });
@@ -122,7 +136,7 @@ async function createMovement(req, res, next) {
 
     // Lock the product row
     const { rows: [product] } = await client.query(
-      'SELECT id, name, stock_current, active FROM products WHERE id = $1 FOR UPDATE',
+      'SELECT id, name, stock_current, sale_price, active FROM products WHERE id = $1 FOR UPDATE',
       [product_id]
     );
     if (!product) {
@@ -142,17 +156,29 @@ async function createMovement(req, res, next) {
       });
     }
 
-    const unitPriceInt = parseInt(unit_price) || 0;
-    const totalPrice = qty * unitPriceInt;
-    const delta = type === 'ENTRADA' ? qty : -qty;
-    const saleTypeVal = type === 'SALIDA' ? sale_type : null;
+    const unitPriceInt         = parseInt(unit_price)             || 0;
+    const supplierDeliveryCost = parseInt(supplier_delivery_cost) || 0;
+    const deliveryCostShare    = parseInt(delivery_cost_share)    || 0;
+    const totalPrice           = qty * unitPriceInt;
+    const delta                = type === 'ENTRADA' ? qty : -qty;
+    const saleTypeVal          = type === 'SALIDA' ? sale_type : null;
+
+    // Effective cost per unit = purchase price + delivery share spread over units
+    const deliveryPerUnit   = qty > 0 ? Math.ceil(deliveryCostShare / qty) : 0;
+    const costPriceAtEntry  = unitPriceInt + deliveryPerUnit;
 
     // Insert movement
     const { rows: [movement] } = await client.query(
-      `INSERT INTO movements (product_id, user_id, type, quantity, unit_price, total_price, sale_type, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO movements
+         (product_id, user_id, type, quantity, unit_price, total_price, sale_type, notes,
+          supplier_delivery_cost, delivery_cost_share, cost_price_at_entry)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [product_id, req.user.id, type, qty, unitPriceInt, totalPrice, saleTypeVal, notes?.trim() || null]
+      [
+        product_id, req.user.id, type, qty, unitPriceInt, totalPrice, saleTypeVal,
+        notes?.trim() || null,
+        supplierDeliveryCost, deliveryCostShare, costPriceAtEntry,
+      ]
     );
 
     // Update stock
@@ -161,8 +187,23 @@ async function createMovement(req, res, next) {
       [delta, product_id]
     );
 
+    // For ENTRADA: update cost_price to reflect real entry cost (including delivery share)
+    if (type === 'ENTRADA' && costPriceAtEntry > 0) {
+      await client.query(
+        'UPDATE products SET cost_price = $1 WHERE id = $2',
+        [costPriceAtEntry, product_id]
+      );
+    }
+
     await client.query('COMMIT');
-    res.status(201).json(movement);
+
+    // Return movement enriched with current sale_price so frontend can warn if below cost
+    res.status(201).json({
+      ...movement,
+      sale_price:       parseInt(product.sale_price),
+      cost_price_at_entry: costPriceAtEntry,
+      below_cost_warning: costPriceAtEntry > 0 && parseInt(product.sale_price) < costPriceAtEntry,
+    });
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
     next(err);
@@ -189,18 +230,21 @@ async function exportCSV(req, res, next) {
     }
 
     const fields = [
-      { label: 'ID', value: 'id' },
-      { label: 'Fecha', value: (row) => new Date(row.created_at).toLocaleString('es-PY') },
-      { label: 'Tipo', value: 'type' },
-      { label: 'Destino Venta', value: (row) => row.sale_type === 'interna' ? 'Interna (Residentes)' : row.sale_type === 'externa' ? 'Externa (Ajenos/Colaboradores)' : '' },
-      { label: 'Producto', value: 'product_name' },
-      { label: 'SKU', value: 'sku' },
-      { label: 'Categoría', value: 'category_name' },
-      { label: 'Cantidad', value: 'quantity' },
-      { label: 'Precio Unitario (PYG)', value: 'unit_price' },
-      { label: 'Total (PYG)', value: 'total_price' },
-      { label: 'Usuario', value: 'user_name' },
-      { label: 'Notas', value: 'notes' },
+      { label: 'ID',                    value: 'id' },
+      { label: 'Fecha',                 value: (row) => new Date(row.created_at).toLocaleString('es-PY') },
+      { label: 'Tipo',                  value: 'type' },
+      { label: 'Destino Venta',         value: (row) => row.sale_type === 'interna' ? 'Interna (Residentes)' : row.sale_type === 'externa' ? 'Externa (Ajenos/Colaboradores)' : '' },
+      { label: 'Producto',              value: 'product_name' },
+      { label: 'SKU',                   value: 'sku' },
+      { label: 'Categoría',             value: 'category_name' },
+      { label: 'Cantidad',              value: 'quantity' },
+      { label: 'Precio Compra (PYG)',   value: 'unit_price' },
+      { label: 'Total Compra (PYG)',    value: 'total_price' },
+      { label: 'Delivery Proveedor (PYG)', value: 'supplier_delivery_cost' },
+      { label: 'Delivery Asignado (PYG)',  value: 'delivery_cost_share' },
+      { label: 'Costo Real/u (PYG)',    value: 'cost_price_at_entry' },
+      { label: 'Usuario',               value: 'user_name' },
+      { label: 'Notas',                 value: 'notes' },
     ];
 
     const parser = new Parser({ fields });

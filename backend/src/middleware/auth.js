@@ -32,14 +32,14 @@ function requireAdmin(req, res, next) {
 }
 
 /**
- * Middleware: require admin or operator role.
- * Blocks marketing role from stock movements.
+ * Middleware: require admin, operator or marketing role.
+ * All three roles can register stock movements.
  */
 function requireOperatorOrAdmin(req, res, next) {
-  const allowed = ['admin', 'operator'];
+  const allowed = ['admin', 'operator', 'marketing'];
   if (!allowed.includes(req.user?.role)) {
     return res.status(403).json({
-      error: 'Acceso denegado: el rol marketing no puede registrar movimientos de stock',
+      error: 'Acceso denegado: no tiene permiso para registrar movimientos de stock',
     });
   }
   next();
