@@ -25,7 +25,6 @@ const navItems = [
   {
     to: '/movements',
     label: 'Registrar Movimiento',
-    operatorOnly: true,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -81,11 +80,9 @@ const adminItems = [
 export default function Sidebar() {
   const { isAdmin, isMarketing } = useAuth();
 
-  // Filter nav items based on role
-  const visibleNavItems = navItems.filter((item) => {
-    if (item.operatorOnly && isMarketing) return false;
-    return true;
-  });
+  // All nav items are visible to all authenticated users.
+  // Only the admin section (Users) is restricted via adminOnly route.
+  const visibleNavItems = navItems;
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
