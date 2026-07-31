@@ -136,23 +136,25 @@ export default function MovementsPage() {
 
   /* ── Single-movement form ── */
   const [form, setForm] = useState({
-    type:       'ENTRADA',
-    sale_type:  '',
-    quantity:   '',
-    unit_price: '',
-    notes:      '',
+    type:           'ENTRADA',
+    sale_type:      '',
+    quantity:       '',
+    unit_price:     '',
+    notes:          '',
+    invoice_number: '',
   });
   const [selectedProduct,   setSelectedProduct]   = useState(null);
   const [singleDelivery,    setSingleDelivery]     = useState('');   // supplier delivery for single mode
   const [belowCostWarnings, setBelowCostWarnings] = useState([]);   // after submit
 
   /* ── Multi-entrada state ── */
-  const [multiMode,    setMultiMode]    = useState(false);
-  const [multiItems,   setMultiItems]   = useState([]);   // { product, quantity, unit_price }
-  const [multiProduct, setMultiProduct] = useState(null);
-  const [multiQty,     setMultiQty]     = useState('1');
-  const [multiPrice,   setMultiPrice]   = useState('');
-  const [multiDelivery, setMultiDelivery] = useState(''); // shared delivery cost for multi
+  const [multiMode,         setMultiMode]         = useState(false);
+  const [multiItems,        setMultiItems]        = useState([]);   // { product, quantity, unit_price }
+  const [multiProduct,      setMultiProduct]      = useState(null);
+  const [multiQty,          setMultiQty]          = useState('1');
+  const [multiPrice,        setMultiPrice]        = useState('');
+  const [multiDelivery,     setMultiDelivery]     = useState(''); // shared delivery cost for multi
+  const [multiInvoice,      setMultiInvoice]      = useState(''); // invoice number for multi-entrada
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -240,6 +242,7 @@ export default function MovementsPage() {
         quantity:                singleQty,
         unit_price:              singleUnitPrice,
         notes:                   form.notes,
+        invoice_number:          form.invoice_number,
         supplier_delivery_cost:  form.type === 'ENTRADA' ? singleDeliveryCost : undefined,
         delivery_cost_share:     form.type === 'ENTRADA' ? singleDeliveryCost : undefined, // 100% for single
       });
@@ -261,7 +264,7 @@ export default function MovementsPage() {
       setProducts(updRes.data.data);
       const updated = updRes.data.data.find((p) => p.id === selectedProduct.id);
       setSelectedProduct(updated || null);
-      setForm((prev) => ({ ...prev, sale_type: '', quantity: '', unit_price: '', notes: '' }));
+      setForm((prev) => ({ ...prev, sale_type: '', quantity: '', unit_price: '', notes: '', invoice_number: '' }));
       setSingleDelivery('');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar el movimiento');
@@ -273,6 +276,10 @@ export default function MovementsPage() {
   /* ── Submit: multi-entrada ── */
   async function handleSubmitMulti() {
     if (!multiItems.length) return;
+    if (!multiInvoice.trim()) {
+      setError('El número de factura es requerido');
+      return;
+    }
     setError('');
     setSuccess('');
     setBelowCostWarnings([]);
@@ -288,6 +295,7 @@ export default function MovementsPage() {
           quantity:               item.quantity,
           unit_price:             item.unit_price,
           notes:                  form.notes || undefined,
+          invoice_number:         multiInvoice.trim(),
           supplier_delivery_cost: totalDeliveryCost,
           delivery_cost_share:    item.deliveryShare,
         });
@@ -306,6 +314,7 @@ export default function MovementsPage() {
       setProducts(updRes.data.data);
       setMultiItems([]);
       setMultiDelivery('');
+      setMultiInvoice('');
       setForm((prev) => ({ ...prev, notes: '' }));
     } catch (err) {
       setError(`Error en ítem ${registered + 1}: ${err.response?.data?.error || err.message}`);
@@ -319,7 +328,12 @@ export default function MovementsPage() {
     !loading &&
     selectedProduct &&
     form.quantity &&
+    form.invoice_number.trim() &&
     (form.type === 'ENTRADA' || form.sale_type);
+  const canSubmitMulti =
+    !loading &&
+    multiItems.length > 0 &&
+    multiInvoice.trim();
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -571,11 +585,26 @@ export default function MovementsPage() {
               </div>
             )}
 
+            {/* Invoice number — multi */}
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 flex items-center gap-1.5">
+                🧾 Número de Factura *
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ej. 001-001-0001234"
+                value={multiInvoice}
+                onChange={(e) => setMultiInvoice(e.target.value)}
+                id="multi-invoice-number"
+              />
+            </div>
+
             {/* Notes */}
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">Notas (opcional)</label>
               <textarea className="form-input resize-none" rows={2}
-                placeholder="Ej. Compra a proveedor X, factura #1234"
+                placeholder="Ej. Compra a proveedor X"
                 value={form.notes} onChange={(e) => handleChange('notes', e.target.value)}
                 id="movement-notes-multi" />
             </div>
@@ -586,7 +615,7 @@ export default function MovementsPage() {
             {belowCostWarnings.length > 0 && <BelowCostWarning items={belowCostWarnings} />}
 
             <button type="button" onClick={handleSubmitMulti}
-              disabled={loading || multiItems.length === 0}
+              disabled={!canSubmitMulti}
               className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-500 text-white"
               id="btn-submit-multi">
               {loading ? 'Registrando…' : `↑ Registrar ${multiItems.length} entrada(s)`}
@@ -660,6 +689,22 @@ export default function MovementsPage() {
                 </div>
               </div>
             )}
+
+            {/* Invoice number */}
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 flex items-center gap-1.5">
+                🧾 Número de Factura *
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ej. 001-001-0001234"
+                value={form.invoice_number}
+                onChange={(e) => handleChange('invoice_number', e.target.value)}
+                required
+                id="movement-invoice-number"
+              />
+            </div>
 
             {/* Quantity + Unit price */}
             <div className="grid grid-cols-2 gap-4">
@@ -741,7 +786,7 @@ export default function MovementsPage() {
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">Notas (opcional)</label>
               <textarea className="form-input resize-none" rows={3}
-                placeholder="Ej. Compra a proveedor X, factura #1234"
+                placeholder="Ej. Compra a proveedor X"
                 value={form.notes} onChange={(e) => handleChange('notes', e.target.value)}
                 id="movement-notes" />
             </div>

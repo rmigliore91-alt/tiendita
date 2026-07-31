@@ -2,14 +2,14 @@ const pool = require('../config/db');
 
 /**
  * GET /api/products
- * Query: ?category_id=&category=&active=&low_stock=&search=&page=&limit=&sort_by=&order=
+ * Query: ?category_id=&category=&active=&low_stock=&expiring_soon=&search=&page=&limit=&sort_by=&order=
  * Without page/limit → returns flat array (backward-compatible for dropdowns).
  * With page/limit    → returns { data, total, page, totalPages }.
  */
 async function listProducts(req, res, next) {
   try {
     // Support both ?category_id= (new) and ?category= (legacy)
-    const { active, low_stock, search } = req.query;
+    const { active, low_stock, expiring_soon, search } = req.query;
     const category = req.query.category_id || req.query.category;
 
     const conditions = [];
@@ -25,6 +25,9 @@ async function listProducts(req, res, next) {
     }
     if (low_stock === 'true') {
       conditions.push(`p.stock_current <= p.stock_minimum`);
+    }
+    if (expiring_soon === 'true') {
+      conditions.push(`p.expiry_date IS NOT NULL AND p.expiry_date <= (CURRENT_DATE + INTERVAL '30 days')`);
     }
     if (search) {
       params.push(`%${search}%`);
@@ -43,6 +46,7 @@ async function listProducts(req, res, next) {
       stock_minimum: 'p.stock_minimum',
       sale_price:    'p.sale_price',
       active:        'p.active',
+      expiry_date:   'p.expiry_date',
     };
     const sortCol   = SORT_MAP[req.query.sort_by] || null;
     const sortOrder = req.query.order === 'desc' ? 'DESC' : 'ASC';
@@ -54,7 +58,7 @@ async function listProducts(req, res, next) {
       SELECT p.id, p.name, p.sku, p.unit,
              p.stock_current, p.stock_minimum,
              p.cost_price, p.sale_price,
-             p.active, p.created_at,
+             p.active, p.created_at, p.expiry_date,
              c.id AS category_id, c.name AS category_name
       FROM products p
       JOIN categories c ON c.id = p.category_id
@@ -98,7 +102,7 @@ async function getProduct(req, res, next) {
       `SELECT p.id, p.name, p.sku, p.unit,
               p.stock_current, p.stock_minimum,
               p.cost_price, p.sale_price,
-              p.active, p.created_at,
+              p.active, p.created_at, p.expiry_date,
               c.id AS category_id, c.name AS category_name
        FROM products p
        JOIN categories c ON c.id = p.category_id
@@ -117,14 +121,14 @@ async function getProduct(req, res, next) {
  */
 async function createProduct(req, res, next) {
   try {
-    const { category_id, name, sku, unit, stock_current, stock_minimum, cost_price, sale_price } = req.body;
+    const { category_id, name, sku, unit, stock_current, stock_minimum, cost_price, sale_price, expiry_date } = req.body;
     if (!category_id || !name || !sku || !unit) {
       return res.status(400).json({ error: 'Categoría, nombre, SKU y unidad son requeridos' });
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO products (category_id, name, sku, unit, stock_current, stock_minimum, cost_price, sale_price)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO products (category_id, name, sku, unit, stock_current, stock_minimum, cost_price, sale_price, expiry_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         category_id,
@@ -135,6 +139,7 @@ async function createProduct(req, res, next) {
         parseInt(stock_minimum) || 0,
         parseInt(cost_price) || 0,
         parseInt(sale_price) || 0,
+        expiry_date || null,
       ]
     );
     res.status(201).json(rows[0]);
@@ -149,7 +154,10 @@ async function createProduct(req, res, next) {
 async function updateProduct(req, res, next) {
   try {
     const { id } = req.params;
-    const { category_id, name, sku, unit, stock_minimum, cost_price, sale_price } = req.body;
+    const { category_id, name, sku, unit, stock_minimum, cost_price, sale_price, expiry_date } = req.body;
+
+    // expiry_date can be explicitly set to null to clear it
+    const expiryVal = expiry_date === '' ? null : (expiry_date || undefined);
 
     const { rows } = await pool.query(
       `UPDATE products
@@ -159,8 +167,9 @@ async function updateProduct(req, res, next) {
            unit          = COALESCE($4, unit),
            stock_minimum = COALESCE($5, stock_minimum),
            cost_price    = COALESCE($6, cost_price),
-           sale_price    = COALESCE($7, sale_price)
-       WHERE id = $8
+           sale_price    = COALESCE($7, sale_price),
+           expiry_date   = $8
+       WHERE id = $9
        RETURNING *`,
       [
         category_id || null,
@@ -170,6 +179,7 @@ async function updateProduct(req, res, next) {
         stock_minimum !== undefined ? parseInt(stock_minimum) : null,
         cost_price !== undefined ? parseInt(cost_price) : null,
         sale_price !== undefined ? parseInt(sale_price) : null,
+        expiryVal !== undefined ? expiryVal : null,
         id,
       ]
     );
@@ -224,7 +234,12 @@ async function getDashboardStats(req, res, next) {
         COUNT(*) FILTER (WHERE active AND stock_current > 0
                               AND stock_current <= stock_minimum)             AS stock_low,
         COUNT(*) FILTER (WHERE active AND stock_current = 0)                 AS stock_zero,
-        COALESCE(SUM(stock_current * cost_price) FILTER (WHERE active), 0)  AS total_value
+        COALESCE(SUM(stock_current * cost_price) FILTER (WHERE active), 0)  AS total_value,
+        COUNT(*) FILTER (WHERE active AND expiry_date IS NOT NULL
+                              AND expiry_date < CURRENT_DATE)                AS expired,
+        COUNT(*) FILTER (WHERE active AND expiry_date IS NOT NULL
+                              AND expiry_date >= CURRENT_DATE
+                              AND expiry_date <= CURRENT_DATE + INTERVAL '30 days') AS expiring_soon
       FROM products
     `);
 
@@ -237,7 +252,20 @@ async function getDashboardStats(req, res, next) {
       LIMIT 10
     `);
 
-    res.json({ stats, lowStockProducts });
+    // Products expiring in the next 30 days or already expired
+    const { rows: expiringProducts } = await pool.query(`
+      SELECT p.id, p.name, p.sku, p.expiry_date, p.stock_current, c.name AS category_name,
+             (p.expiry_date - CURRENT_DATE) AS days_until_expiry
+      FROM products p
+      JOIN categories c ON c.id = p.category_id
+      WHERE p.active = TRUE
+        AND p.expiry_date IS NOT NULL
+        AND p.expiry_date <= CURRENT_DATE + INTERVAL '30 days'
+      ORDER BY p.expiry_date ASC
+      LIMIT 10
+    `);
+
+    res.json({ stats, lowStockProducts, expiringProducts });
   } catch (err) {
     next(err);
   }

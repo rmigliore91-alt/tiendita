@@ -39,6 +39,41 @@ function priceDisplay(price) {
   return formatPYG(price);
 }
 
+/**
+ * Returns expiry badge info based on days until expiry.
+ * days < 0  → expired (rojo)
+ * 0–7       → muy próximo (naranja intenso)
+ * 8–30      → próximo (amarillo)
+ * null / >30 → sin alerta
+ */
+function expiryBadge(expiryDate) {
+  if (!expiryDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const exp = new Date(expiryDate);
+  exp.setHours(0, 0, 0, 0);
+  const diffMs = exp - today;
+  const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (days < 0) {
+    return { label: 'VENCIDO', className: 'bg-red-500/20 text-red-300 border border-red-500/40', icon: '🔴' };
+  }
+  if (days <= 7) {
+    return { label: `Vence en ${days}d`, className: 'bg-orange-500/20 text-orange-300 border border-orange-500/40', icon: '🟠' };
+  }
+  if (days <= 30) {
+    return { label: `Vence en ${days}d`, className: 'bg-amber-500/20 text-amber-300 border border-amber-500/40', icon: '🟡' };
+  }
+  return null; // no alert needed
+}
+
+function formatExpiryDate(expiryDate) {
+  if (!expiryDate) return null;
+  return new Date(expiryDate + 'T00:00:00').toLocaleDateString('es-PY', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  });
+}
+
 const EMPTY_FORM = {
   category_id: '',
   name: '',
@@ -48,6 +83,7 @@ const EMPTY_FORM = {
   stock_minimum: 5,
   cost_price: 0,
   sale_price: 0,
+  expiry_date: '',
 };
 
 const PAGE_SIZE = 20;
@@ -162,6 +198,7 @@ export default function ProductsPage() {
       stock_minimum: product.stock_minimum,
       cost_price: product.cost_price,
       sale_price: product.sale_price,
+      expiry_date: product.expiry_date ? product.expiry_date.split('T')[0] : '',
     });
     setFormError('');
     setModalOpen(true);
@@ -300,6 +337,7 @@ export default function ProductsPage() {
                   <SortableHeader label="Stock Actual"  field="stock_current" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <SortableHeader label="Stock Mín."    field="stock_minimum" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <SortableHeader label="Precio Venta (₲)" field="sale_price" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableHeader label="Vencimiento"   field="expiry_date"   sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-center" />
                   <SortableHeader label="Estado"        field="active"        sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-center" />
                   {isAdmin && <th className="text-center">Acciones</th>}
                 </tr>
@@ -307,91 +345,112 @@ export default function ProductsPage() {
               <tbody>
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 9 : 8} className="text-center py-14 text-slate-500">
+                    <td colSpan={isAdmin ? 10 : 9} className="text-center py-14 text-slate-500">
                       <span className="text-3xl block mb-2">🔍</span>
                       No se encontraron productos con los filtros aplicados
                     </td>
                   </tr>
                 ) : (
-                  products.map((p) => (
-                    <tr key={p.id} className={!p.active ? 'opacity-40' : ''}>
-                      {/* SKU */}
-                      <td>
-                        <span className="font-mono text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
-                          {p.sku}
-                        </span>
-                      </td>
-
-                      {/* Name */}
-                      <td>
-                        <p className="font-medium text-slate-200 text-sm leading-tight max-w-xs">{p.name}</p>
-                      </td>
-
-                      {/* Category */}
-                      <td className="text-slate-400 text-xs whitespace-nowrap">{p.category_name}</td>
-
-                      {/* Unit */}
-                      <td className="text-slate-400 text-xs">{p.unit}</td>
-
-                      {/* Stock current — colored */}
-                      <td className={`text-right text-sm tabular-nums ${stockColor(p.stock_current, p.stock_minimum)}`}>
-                        {p.stock_current}
-                      </td>
-
-                      {/* Stock minimum */}
-                      <td className="text-right text-slate-500 text-sm tabular-nums">{p.stock_minimum}</td>
-
-                      {/* Sale price */}
-                      <td className="text-right text-sm text-slate-300 whitespace-nowrap">
-                        {priceDisplay(p.sale_price)}
-                      </td>
-
-                      {/* Status badge */}
-                      <td className="text-center">
-                        <span className={p.active ? 'badge badge-green' : 'badge badge-slate'}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${p.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
-                          {p.active ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-
-                      {/* Actions — admin only */}
-                      {isAdmin && (
-                        <td className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => openEdit(p)}
-                              className="p-1.5 rounded-lg hover:bg-brand-500/20 text-brand-400 transition-colors"
-                              title="Editar producto"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => toggleActive(p)}
-                              className={`p-1.5 rounded-lg transition-colors ${
-                                p.active
-                                  ? 'hover:bg-red-500/20 text-red-400'
-                                  : 'hover:bg-emerald-500/20 text-emerald-400'
-                              }`}
-                              title={p.active ? 'Desactivar' : 'Activar'}
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                {p.active ? (
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                ) : (
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                )}
-                              </svg>
-                            </button>
-                          </div>
+                  products.map((p) => {
+                    const badge = expiryBadge(p.expiry_date);
+                    return (
+                      <tr key={p.id} className={!p.active ? 'opacity-40' : ''}>
+                        {/* SKU */}
+                        <td>
+                          <span className="font-mono text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
+                            {p.sku}
+                          </span>
                         </td>
-                      )}
-                    </tr>
-                  ))
+
+                        {/* Name */}
+                        <td>
+                          <p className="font-medium text-slate-200 text-sm leading-tight max-w-xs">{p.name}</p>
+                        </td>
+
+                        {/* Category */}
+                        <td className="text-slate-400 text-xs whitespace-nowrap">{p.category_name}</td>
+
+                        {/* Unit */}
+                        <td className="text-slate-400 text-xs">{p.unit}</td>
+
+                        {/* Stock current — colored */}
+                        <td className={`text-right text-sm tabular-nums ${stockColor(p.stock_current, p.stock_minimum)}`}>
+                          {p.stock_current}
+                        </td>
+
+                        {/* Stock minimum */}
+                        <td className="text-right text-slate-500 text-sm tabular-nums">{p.stock_minimum}</td>
+
+                        {/* Sale price */}
+                        <td className="text-right text-sm text-slate-300 whitespace-nowrap">
+                          {priceDisplay(p.sale_price)}
+                        </td>
+
+                        {/* Expiry date */}
+                        <td className="text-center">
+                          {p.expiry_date ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-xs text-slate-400">
+                                {formatExpiryDate(p.expiry_date)}
+                              </span>
+                              {badge && (
+                                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${badge.className}`}>
+                                  {badge.icon} {badge.label}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-600 text-xs">—</span>
+                          )}
+                        </td>
+
+                        {/* Status badge */}
+                        <td className="text-center">
+                          <span className={p.active ? 'badge badge-green' : 'badge badge-slate'}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${p.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                            {p.active ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+
+                        {/* Actions — admin only */}
+                        {isAdmin && (
+                          <td className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => openEdit(p)}
+                                className="p-1.5 rounded-lg hover:bg-brand-500/20 text-brand-400 transition-colors"
+                                title="Editar producto"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => toggleActive(p)}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  p.active
+                                    ? 'hover:bg-red-500/20 text-red-400'
+                                    : 'hover:bg-emerald-500/20 text-emerald-400'
+                                }`}
+                                title={p.active ? 'Desactivar' : 'Activar'}
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  {p.active ? (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                  ) : (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  )}
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -511,6 +570,29 @@ export default function ProductsPage() {
               <input type="number" min="0" className="form-input"
                 value={form.sale_price}
                 onChange={(e) => setForm((p) => ({ ...p, sale_price: e.target.value }))} />
+            </div>
+
+            {/* Expiry date */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 flex items-center gap-1.5">
+                📅 Fecha de Vencimiento
+                <span className="text-slate-600 font-normal">(opcional)</span>
+              </label>
+              <input
+                type="date"
+                className="form-input"
+                id="product-expiry-date"
+                value={form.expiry_date}
+                onChange={(e) => setForm((p) => ({ ...p, expiry_date: e.target.value }))}
+              />
+              {form.expiry_date && (() => {
+                const badge = expiryBadge(form.expiry_date);
+                return badge ? (
+                  <p className={`mt-1.5 text-xs font-semibold flex items-center gap-1 ${badge.className.includes('red') ? 'text-red-400' : badge.className.includes('orange') ? 'text-orange-400' : 'text-amber-400'}`}>
+                    {badge.icon} {badge.label === 'VENCIDO' ? 'Esta fecha ya venció' : `Alerta: ${badge.label}`}
+                  </p>
+                ) : null;
+              })()}
             </div>
           </div>
 

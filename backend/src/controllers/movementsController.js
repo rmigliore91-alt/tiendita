@@ -44,7 +44,7 @@ function buildFilters(query) {
 const BASE_SELECT = `
   SELECT
     m.id, m.type, m.quantity, m.unit_price, m.total_price,
-    m.sale_type, m.notes, m.created_at,
+    m.sale_type, m.notes, m.created_at, m.invoice_number,
     m.supplier_delivery_cost, m.delivery_cost_share, m.cost_price_at_entry,
     p.id AS product_id, p.name AS product_name, p.sku,
     p.sale_price, p.cost_price,
@@ -97,8 +97,10 @@ async function listMovements(req, res, next) {
 
 /**
  * POST /api/movements
- * Body: { product_id, type, quantity, unit_price, notes, sale_type?,
- *         supplier_delivery_cost?, delivery_cost_share? }
+ * Body: { product_id, type, quantity, unit_price, notes, invoice_number,
+ *         sale_type?, supplier_delivery_cost?, delivery_cost_share? }
+ *
+ * invoice_number is required for all movements.
  *
  * For ENTRADA movements:
  *   - supplier_delivery_cost: total freight paid to supplier for the whole purchase batch
@@ -114,6 +116,7 @@ async function createMovement(req, res, next) {
   try {
     const {
       product_id, type, quantity, unit_price, notes, sale_type,
+      invoice_number,
       supplier_delivery_cost, delivery_cost_share,
     } = req.body;
 
@@ -126,6 +129,10 @@ async function createMovement(req, res, next) {
     // sale_type required for SALIDA
     if (type === 'SALIDA' && !['interna', 'externa'].includes(sale_type)) {
       return res.status(400).json({ error: 'Para una SALIDA debe indicar si es venta interna o externa' });
+    }
+    // invoice_number is required for all movements
+    if (!invoice_number || !invoice_number.trim()) {
+      return res.status(400).json({ error: 'El número de factura es requerido' });
     }
     const qty = parseInt(quantity);
     if (isNaN(qty) || qty <= 0) {
@@ -171,12 +178,13 @@ async function createMovement(req, res, next) {
     const { rows: [movement] } = await client.query(
       `INSERT INTO movements
          (product_id, user_id, type, quantity, unit_price, total_price, sale_type, notes,
-          supplier_delivery_cost, delivery_cost_share, cost_price_at_entry)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          invoice_number, supplier_delivery_cost, delivery_cost_share, cost_price_at_entry)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         product_id, req.user.id, type, qty, unitPriceInt, totalPrice, saleTypeVal,
         notes?.trim() || null,
+        invoice_number.trim(),
         supplierDeliveryCost, deliveryCostShare, costPriceAtEntry,
       ]
     );
@@ -233,6 +241,7 @@ async function exportCSV(req, res, next) {
       { label: 'ID',                    value: 'id' },
       { label: 'Fecha',                 value: (row) => new Date(row.created_at).toLocaleString('es-PY') },
       { label: 'Tipo',                  value: 'type' },
+      { label: 'N° Factura',            value: 'invoice_number' },
       { label: 'Destino Venta',         value: (row) => row.sale_type === 'interna' ? 'Interna (Residentes)' : row.sale_type === 'externa' ? 'Externa (Ajenos/Colaboradores)' : '' },
       { label: 'Producto',              value: 'product_name' },
       { label: 'SKU',                   value: 'sku' },
