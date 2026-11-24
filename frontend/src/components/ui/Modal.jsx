@@ -1,4 +1,13 @@
+import { useEffect } from 'react';
+
 export default function Modal({ open, onClose, title, children, size = 'md' }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === 'Escape' && onClose?.();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const sizeClass = {
@@ -9,31 +18,27 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
   }[size] || 'max-w-lg';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" />
 
-      {/* Modal content */}
       <div
-        className={`relative w-full ${sizeClass} card p-6 shadow-2xl animate-[fadeIn_0.15s_ease-out]`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`relative w-full ${sizeClass} max-h-[90vh] overflow-y-auto bg-surface-container-lowest rounded-2xl shadow-modal border border-surface-container-high animate-[fadeIn_0.15s_ease-out]`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-slate-100">{title}</h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-surface-container-lowest border-b border-surface-container-high">
+          <h2 className="text-title-md font-bold text-on-surface tracking-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="w-9 h-9 -mr-2 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors"
             aria-label="Cerrar"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <span className="material-symbol text-[20px]">close</span>
           </button>
         </div>
-        {children}
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );

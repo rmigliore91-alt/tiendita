@@ -76,7 +76,7 @@ export default function UsersPage() {
   return (
     <div className="space-y-5 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-100">Gestión de Usuarios</h2>
+        <h2 className="page-title">Gestión de Usuarios</h2>
         <button onClick={openCreate} className="btn-primary" id="btn-new-user">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -87,7 +87,7 @@ export default function UsersPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -106,8 +106,8 @@ export default function UsersPage() {
               <tbody>
                 {users.map((u) => (
                   <tr key={u.id} className={!u.active ? 'opacity-50' : ''}>
-                    <td className="font-medium text-slate-200">{u.name}</td>
-                    <td className="text-slate-400 text-sm">{u.email}</td>
+                    <td className="font-medium text-on-surface">{u.name}</td>
+                    <td className="text-on-surface-variant text-sm">{u.email}</td>
                     <td>
                       <span className={u.role === 'admin' ? 'badge badge-blue' : 'badge badge-slate'}>
                         {u.role === 'admin' ? 'Administrador' : 'Operador'}
@@ -118,12 +118,12 @@ export default function UsersPage() {
                         {u.active ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="text-slate-500 text-xs">{formatDate(u.created_at)}</td>
+                    <td className="text-on-surface-variant text-xs">{formatDate(u.created_at)}</td>
                     <td className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => openEdit(u)}
-                          className="p-1.5 rounded-lg hover:bg-brand-500/20 text-brand-400 transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-primary-fixed text-primary-container transition-colors"
                           title="Editar"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -135,8 +135,8 @@ export default function UsersPage() {
                           onClick={() => toggleActive(u)}
                           className={`p-1.5 rounded-lg transition-colors ${
                             u.active
-                              ? 'hover:bg-red-500/20 text-red-400'
-                              : 'hover:bg-emerald-500/20 text-emerald-400'
+                              ? 'hover:bg-error-container text-error'
+                              : 'hover:bg-tertiary-fixed text-tertiary'
                           }`}
                           title={u.active ? 'Desactivar' : 'Activar'}
                         >
@@ -168,7 +168,7 @@ export default function UsersPage() {
       >
         <form onSubmit={handleSave} className="space-y-4" id="user-form">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Nombre *</label>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Nombre *</label>
             <input
               type="text"
               className="form-input"
@@ -180,7 +180,7 @@ export default function UsersPage() {
           </div>
           {!editing && (
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Email *</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Email *</label>
               <input
                 type="email"
                 className="form-input"
@@ -193,7 +193,7 @@ export default function UsersPage() {
           )}
           {!editing && (
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Contraseña *</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Contraseña *</label>
               <input
                 type="password"
                 className="form-input"
@@ -206,7 +206,7 @@ export default function UsersPage() {
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Rol *</label>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Rol *</label>
             <select
               className="form-input"
               value={form.role}
@@ -219,7 +219,7 @@ export default function UsersPage() {
           </div>
 
           {formError && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">
+            <div className="p-3 rounded-lg bg-error-container border border-error-outline text-sm text-error">
               {formError}
             </div>
           )}

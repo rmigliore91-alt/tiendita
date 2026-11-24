@@ -24,11 +24,11 @@ function deliveryTier(km) {
 }
 
 const tierColors = {
-  emerald: 'border-emerald-500 bg-emerald-500/10 text-emerald-400',
-  cyan:    'border-cyan-500    bg-cyan-500/10    text-cyan-400',
-  amber:   'border-amber-500   bg-amber-500/10   text-amber-400',
-  orange:  'border-orange-500  bg-orange-500/10  text-orange-400',
-  red:     'border-red-500     bg-red-500/10     text-red-400',
+  emerald: 'border-tertiary-container bg-tertiary-fixed text-tertiary',
+  cyan:    'border-info    bg-info-container    text-on-info-container',
+  amber:   'border-warning   bg-warning-container   text-on-warning-container',
+  orange:  'border-caution  bg-caution-container  text-on-caution-container',
+  red:     'border-error     bg-error-container     text-error',
 };
 
 function todayLabel() {
@@ -62,42 +62,42 @@ function NewContactInline({ initialName, onCreated, onCancel }) {
   }
 
   return (
-    <div className="mt-3 p-4 rounded-xl border border-brand-500/30 bg-brand-500/5 space-y-3">
-      <p className="text-xs font-semibold text-brand-400 uppercase tracking-wider">Nuevo contacto</p>
+    <div className="mt-3 p-4 rounded-xl border border-primary-fixed-dim bg-primary-fixed/40 space-y-3">
+      <p className="text-xs font-semibold text-primary-container uppercase tracking-wider">Nuevo contacto</p>
       <form onSubmit={handleCreate} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Nombre *</label>
+            <label className="block text-xs text-on-surface-variant mb-1">Nombre *</label>
             <input className="form-input" value={form.name} onChange={set('name')} required placeholder="Nombre / Razón social" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">RUC</label>
+            <label className="block text-xs text-on-surface-variant mb-1">RUC</label>
             <input className="form-input" value={form.ruc} onChange={set('ruc')} placeholder="80012345-6" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Teléfono 1</label>
+            <label className="block text-xs text-on-surface-variant mb-1">Teléfono 1</label>
             <input className="form-input" value={form.phone1} onChange={set('phone1')} placeholder="0981 123 456" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Teléfono 2</label>
+            <label className="block text-xs text-on-surface-variant mb-1">Teléfono 2</label>
             <input className="form-input" value={form.phone2} onChange={set('phone2')} placeholder="021 123 456" />
           </div>
         </div>
         <div>
-          <label className="block text-xs text-slate-500 mb-1">Dirección</label>
+          <label className="block text-xs text-on-surface-variant mb-1">Dirección</label>
           <input className="form-input" value={form.address} onChange={set('address')} placeholder="Calle, barrio, ciudad" />
         </div>
         <div>
-          <label className="block text-xs text-slate-500 mb-1">E-mail</label>
+          <label className="block text-xs text-on-surface-variant mb-1">E-mail</label>
           <input className="form-input" type="email" value={form.email} onChange={set('email')} placeholder="cliente@mail.com" />
         </div>
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-error">{error}</p>}
         <div className="flex gap-2">
           <button type="button" onClick={onCancel} className="btn-secondary flex-1 text-xs justify-center">Cancelar</button>
           <button type="submit" disabled={loading} className="btn-primary flex-1 text-xs justify-center">
-            {loading ? 'Guardando…' : '✓ Crear y seleccionar'}
+            {loading ? 'Guardando…' : 'Crear y seleccionar'}
           </button>
         </div>
       </form>
@@ -157,7 +157,7 @@ function ContactCombobox({ selected, onSelect }) {
 
   return (
     <div ref={wrapRef} className="relative">
-      <label className="block text-xs text-slate-500 mb-1.5">
+      <label className="block text-xs text-on-surface-variant mb-1.5">
         Buscar contacto existente o crear nuevo
       </label>
       <div className="relative">
@@ -174,7 +174,7 @@ function ContactCombobox({ selected, onSelect }) {
           <button
             type="button"
             onClick={clear}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -185,16 +185,16 @@ function ContactCombobox({ selected, onSelect }) {
 
       {/* Selected badge */}
       {selected && (
-        <div className="mt-2 flex items-center gap-2 p-2.5 rounded-lg bg-brand-500/10 border border-brand-500/30 text-sm">
-          <span className="text-brand-400 font-semibold">✓ {selected.name}</span>
-          {selected.ruc && <span className="text-slate-500 text-xs">RUC: {selected.ruc}</span>}
-          {selected.phone1 && <span className="text-slate-500 text-xs">· {selected.phone1}</span>}
+        <div className="mt-2 flex items-center gap-2 p-2.5 rounded-lg bg-primary-fixed border border-primary-fixed-dim text-sm">
+          <span className="text-primary-container font-semibold"><span className="material-symbol text-[16px] align-[-3px] mr-1" aria-hidden="true">check_circle</span>{selected.name}</span>
+          {selected.ruc && <span className="text-on-surface-variant text-xs">RUC: {selected.ruc}</span>}
+          {selected.phone1 && <span className="text-on-surface-variant text-xs">· {selected.phone1}</span>}
         </div>
       )}
 
       {/* Dropdown */}
       {open && !selected && (
-        <div className="absolute z-30 w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute z-30 w-full mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl overflow-hidden">
           {suggestions.length > 0 ? (
             <>
               {suggestions.map((c) => (
@@ -202,10 +202,10 @@ function ContactCombobox({ selected, onSelect }) {
                   key={c.id}
                   type="button"
                   onMouseDown={() => pick(c)}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-700 transition-colors"
+                  className="w-full text-left px-4 py-2.5 hover:bg-surface-container transition-colors"
                 >
-                  <p className="text-sm font-medium text-slate-200">{c.name}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm font-medium text-on-surface">{c.name}</p>
+                  <p className="text-xs text-on-surface-variant">
                     {[c.ruc, c.phone1, c.email].filter(Boolean).join(' · ')}
                   </p>
                 </button>
@@ -213,18 +213,18 @@ function ContactCombobox({ selected, onSelect }) {
               <button
                 type="button"
                 onMouseDown={() => { setOpen(false); setCreating(true); }}
-                className="w-full text-left px-4 py-2.5 border-t border-slate-700 hover:bg-slate-700 transition-colors text-brand-400 text-sm"
+                className="w-full text-left px-4 py-2.5 border-t border-outline-variant hover:bg-surface-container transition-colors text-primary-container text-sm"
               >
-                ➕ Crear &quot;{query}&quot; como nuevo contacto
+                <span className="material-symbol text-[16px] align-[-3px] mr-1" aria-hidden="true">person_add</span>Crear &quot;{query}&quot; como nuevo contacto
               </button>
             </>
           ) : query.trim() ? (
             <button
               type="button"
               onMouseDown={() => { setOpen(false); setCreating(true); }}
-              className="w-full text-left px-4 py-2.5 hover:bg-slate-700 transition-colors text-brand-400 text-sm"
+              className="w-full text-left px-4 py-2.5 hover:bg-surface-container transition-colors text-primary-container text-sm"
             >
-              ➕ Crear &quot;{query}&quot; como nuevo contacto
+              <span className="material-symbol text-[16px] align-[-3px] mr-1" aria-hidden="true">person_add</span>Crear &quot;{query}&quot; como nuevo contacto
             </button>
           ) : null}
         </div>
@@ -247,30 +247,30 @@ function ConfirmSaleModal({ onConfirm, onCancel, confirming }) {
   const [saleType, setSaleType] = useState('externa');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
         <div>
-          <h3 className="text-lg font-bold text-slate-100 mb-1">✅ Confirmar Venta</h3>
-          <p className="text-sm text-slate-400">
-            Esto generará movimientos de <span className="text-red-400 font-semibold">SALIDA</span> de
+          <h3 className="text-lg font-bold text-on-surface mb-1">Confirmar venta</h3>
+          <p className="text-sm text-on-surface-variant">
+            Esto generará movimientos de <span className="text-error font-semibold">SALIDA</span> de
             stock para cada producto del presupuesto. Esta acción no se puede deshacer.
           </p>
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Destino de venta *</p>
+          <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Destino de venta *</p>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setSaleType('interna')}
               className={`p-4 rounded-xl border-2 text-sm transition-all flex flex-col items-center gap-1 ${
                 saleType === 'interna'
-                  ? 'border-violet-500 bg-violet-500/10 text-violet-300'
-                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                  ? 'border-brand bg-brand-soft text-brand-ink'
+                  : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline'
               }`}
               id="confirm-sale-interna"
             >
-              <span className="text-2xl">🏠</span>
+              <span className="material-symbol text-[28px]" aria-hidden="true">storefront</span>
               <span className="font-semibold">Interna</span>
               <span className="text-xs opacity-70">Residentes</span>
             </button>
@@ -279,12 +279,12 @@ function ConfirmSaleModal({ onConfirm, onCancel, confirming }) {
               onClick={() => setSaleType('externa')}
               className={`p-4 rounded-xl border-2 text-sm transition-all flex flex-col items-center gap-1 ${
                 saleType === 'externa'
-                  ? 'border-amber-500 bg-amber-500/10 text-amber-300'
-                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                  ? 'border-warning bg-warning-container text-on-warning-container'
+                  : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline'
               }`}
               id="confirm-sale-externa"
             >
-              <span className="text-2xl">🌐</span>
+              <span className="material-symbol text-[28px]" aria-hidden="true">language</span>
               <span className="font-semibold">Externa</span>
               <span className="text-xs opacity-70">Ajenos / Colaboradores</span>
             </button>
@@ -304,7 +304,7 @@ function ConfirmSaleModal({ onConfirm, onCancel, confirming }) {
             type="button"
             onClick={() => onConfirm(saleType)}
             disabled={confirming}
-            className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-tertiary-container hover:bg-tertiary-container text-white font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
             id="btn-confirm-sale-submit"
           >
             {confirming ? (
@@ -313,7 +313,7 @@ function ConfirmSaleModal({ onConfirm, onCancel, confirming }) {
                 Confirmando…
               </>
             ) : (
-              '✅ Confirmar Venta'
+              'Confirmar venta'
             )}
           </button>
         </div>
@@ -488,7 +488,7 @@ export default function BudgetPage() {
       await client.post(`/budgets/${budgetId}/confirm-sale`, { sale_type: saleType });
       setBudgetConfirmed(true);
       setShowConfirmModal(false);
-      setSaveMsg(`✅ Venta confirmada — stock descontado correctamente`);
+      setSaveMsg(`✓ Venta confirmada — stock descontado correctamente`);
     } catch (err) {
       setSaveMsg('Error al confirmar venta: ' + (err.response?.data?.error || err.message));
       setShowConfirmModal(false);
@@ -524,7 +524,7 @@ export default function BudgetPage() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between no-print">
-          <h2 className="text-xl font-bold text-slate-100">💰 Presupuesto para Cliente</h2>
+          <h2 className="page-title">Presupuesto para Cliente</h2>
           <div className="flex gap-2 flex-wrap justify-end">
             {items.length > 0 && !budgetConfirmed && (
               <button
@@ -533,7 +533,7 @@ export default function BudgetPage() {
                 className="btn-secondary"
                 id="btn-save-budget"
               >
-                {saving ? '⏳ Guardando…' : '💾 Guardar'}
+                {saving ? 'Guardando…' : 'Guardar'}
               </button>
             )}
 
@@ -542,17 +542,17 @@ export default function BudgetPage() {
               <button
                 onClick={() => setShowConfirmModal(true)}
                 disabled={saving || confirming}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all active:scale-95 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tertiary-container hover:bg-tertiary-container text-white font-semibold text-sm transition-all active:scale-95 disabled:opacity-50"
                 id="btn-confirm-sale"
               >
-                ✅ Confirmar Venta
+                <span className="material-symbol text-[18px]" aria-hidden="true">check_circle</span> Confirmar venta
               </button>
             )}
 
             {/* Confirmed badge */}
             {budgetConfirmed && (
-              <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-semibold text-sm">
-                ✅ Venta confirmada
+              <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tertiary-fixed border border-tertiary-fixed-dim text-tertiary font-semibold text-sm">
+                <span className="material-symbol text-[18px]" aria-hidden="true">check_circle</span> Venta confirmada
               </span>
             )}
 
@@ -572,27 +572,27 @@ export default function BudgetPage() {
         </div>
 
         {saveMsg && (
-          <div className={`no-print p-3 rounded-lg text-sm border ${saveMsg.startsWith('✓') || saveMsg.startsWith('✅') ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+          <div className={`no-print p-3 rounded-lg text-sm border ${saveMsg.startsWith('✓') ? 'bg-tertiary-fixed border-tertiary-fixed-dim text-tertiary' : 'bg-error-container border-error-outline text-error'}`}>
             {saveMsg}
           </div>
         )}
 
         {/* ═══ Cliente ═══ */}
         <div className="card p-5 no-print">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <span className="text-base">👤</span> Cliente
+          <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbol text-[20px] text-primary-container" aria-hidden="true">person</span> Cliente
           </h3>
           <ContactCombobox selected={contact} onSelect={setContact} />
         </div>
 
         {/* ═══ Agregar productos ═══ */}
         <div className="card p-5 no-print">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <span className="text-base">📦</span> Agregar productos
+          <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbol text-[20px] text-primary-container" aria-hidden="true">inventory_2</span> Agregar productos
           </h3>
           <div className="grid grid-cols-12 gap-3 items-end">
             <div className="col-span-5">
-              <label className="block text-xs text-slate-500 mb-1.5">Producto</label>
+              <label className="block text-xs text-on-surface-variant mb-1.5">Producto</label>
               <select
                 className="form-input"
                 value={productId}
@@ -611,11 +611,11 @@ export default function BudgetPage() {
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-slate-500 mb-1.5">Cantidad</label>
+              <label className="block text-xs text-on-surface-variant mb-1.5">Cantidad</label>
               <input type="number" min="1" className="form-input" value={qty} onChange={(e) => setQty(e.target.value)} id="budget-qty" />
             </div>
             <div className="col-span-3">
-              <label className="block text-xs text-slate-500 mb-1.5">Precio unitario (₲)</label>
+              <label className="block text-xs text-on-surface-variant mb-1.5">Precio unitario (₲)</label>
               <input type="number" min="0" className="form-input" placeholder="0" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} id="budget-unit-price" />
             </div>
             <div className="col-span-2">
@@ -623,7 +623,7 @@ export default function BudgetPage() {
                 type="button"
                 onClick={addItem}
                 disabled={!canAdd}
-                className="w-full py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-2 rounded-lg bg-primary-container hover:bg-primary-container text-white text-sm font-semibold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 id="btn-add-budget-item"
               >
                 + Agregar
@@ -634,24 +634,24 @@ export default function BudgetPage() {
 
         {/* ═══ Delivery ═══ */}
         <div className="card p-5 no-print">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <span className="text-base">🚚</span> Delivery
+          <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbol text-[20px] text-primary-container" aria-hidden="true">local_shipping</span> Delivery
           </h3>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <button type="button" onClick={() => setWithDelivery(false)} id="btn-no-delivery"
-              className={`p-4 rounded-xl border-2 font-semibold text-sm transition-all duration-150 flex flex-col items-center gap-1 ${!withDelivery ? 'border-brand-500 bg-brand-500/10 text-brand-400' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'}`}>
-              <span className="text-2xl">🏪</span><span>Sin delivery</span><span className="text-xs font-normal opacity-70">Retira en local</span>
+              className={`p-4 rounded-xl border-2 font-semibold text-sm transition-all duration-150 flex flex-col items-center gap-1 ${!withDelivery ? 'border-primary-container bg-primary-fixed text-primary-container' : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline'}`}>
+              <span className="material-symbol text-[28px]" aria-hidden="true">storefront</span><span>Sin delivery</span><span className="text-xs font-normal opacity-70">Retira en local</span>
             </button>
             <button type="button" onClick={() => setWithDelivery(true)} id="btn-with-delivery"
-              className={`p-4 rounded-xl border-2 font-semibold text-sm transition-all duration-150 flex flex-col items-center gap-1 ${withDelivery ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'}`}>
-              <span className="text-2xl">🚚</span><span>Con delivery</span><span className="text-xs font-normal opacity-70">Envío a domicilio</span>
+              className={`p-4 rounded-xl border-2 font-semibold text-sm transition-all duration-150 flex flex-col items-center gap-1 ${withDelivery ? 'border-info bg-info-container text-on-info-container' : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline'}`}>
+              <span className="material-symbol text-[28px]" aria-hidden="true">local_shipping</span><span>Con delivery</span><span className="text-xs font-normal opacity-70">Envío a domicilio</span>
             </button>
           </div>
 
           {withDelivery && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Distancia aproximada (km)</label>
+                <label className="block text-xs text-on-surface-variant mb-1.5">Distancia aproximada (km)</label>
                 <input type="number" min="0" step="0.1" className="form-input" placeholder="Ej. 5.3" value={distance} onChange={(e) => setDistance(e.target.value)} id="budget-distance" />
               </div>
               {tier && (
@@ -660,27 +660,27 @@ export default function BudgetPage() {
                   <span className="text-lg font-bold">{formatPYG(deliveryCost)}</span>
                 </div>
               )}
-              <div className="rounded-xl overflow-hidden border border-slate-800 text-xs">
+              <div className="rounded-xl overflow-hidden border border-surface-container-high text-xs">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-slate-800/60 text-slate-500 uppercase tracking-wider">
+                    <tr className="bg-surface-container-low text-on-surface-variant uppercase tracking-wider">
                       <th className="px-3 py-2 text-left font-semibold">Zona</th>
                       <th className="px-3 py-2 text-left font-semibold">Distancia</th>
                       <th className="px-3 py-2 text-right font-semibold">Costo</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-surface-container-high">
                     {[
-                      { zone: 'Zona 1', range: '0 – 2 km',   cost: 10_000, color: 'text-emerald-400' },
-                      { zone: 'Zona 2', range: '2 – 7 km',   cost: 20_000, color: 'text-cyan-400'    },
-                      { zone: 'Zona 3', range: '7 – 11 km',  cost: 25_000, color: 'text-amber-400'   },
-                      { zone: 'Zona 4', range: '11 – 15 km', cost: 30_000, color: 'text-orange-400'  },
-                      { zone: 'Zona 5', range: '> 14 km',    cost: null,   color: 'text-red-400'     },
+                      { zone: 'Zona 1', range: '0 – 2 km',   cost: 10_000, color: 'text-tertiary' },
+                      { zone: 'Zona 2', range: '2 – 7 km',   cost: 20_000, color: 'text-on-info-container'    },
+                      { zone: 'Zona 3', range: '7 – 11 km',  cost: 25_000, color: 'text-on-warning-container'   },
+                      { zone: 'Zona 4', range: '11 – 15 km', cost: 30_000, color: 'text-on-caution-container'  },
+                      { zone: 'Zona 5', range: '> 14 km',    cost: null,   color: 'text-error'     },
                     ].map((row) => (
-                      <tr key={row.zone} className="bg-slate-900/50 hover:bg-slate-800/30 transition-colors">
+                      <tr key={row.zone} className="bg-surface-container-low hover:bg-surface-container-low transition-colors">
                         <td className={`px-3 py-2 font-semibold ${row.color}`}>{row.zone}</td>
-                        <td className="px-3 py-2 text-slate-400">{row.range}</td>
-                        <td className="px-3 py-2 text-right text-slate-300 font-medium">
+                        <td className="px-3 py-2 text-on-surface-variant">{row.range}</td>
+                        <td className="px-3 py-2 text-right text-on-surface font-medium">
                           {row.cost != null ? formatPYG(row.cost) : '₲ 30.000 + ₲ 2.000/km extra'}
                         </td>
                       </tr>
@@ -694,8 +694,8 @@ export default function BudgetPage() {
 
         {/* ═══ Notas ═══ */}
         <div className="card p-5 no-print">
-          <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-            <span className="text-base">📝</span> Observaciones (opcional)
+          <h3 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
+            <span className="material-symbol text-[20px] text-primary-container" aria-hidden="true">notes</span> Observaciones (opcional)
           </h3>
           <textarea
             className="form-input resize-none" rows={2}
@@ -708,32 +708,32 @@ export default function BudgetPage() {
         {items.length > 0 && (
           <div id="budget-print" className="card p-6 space-y-5">
             {/* Header */}
-            <div className="flex items-start justify-between border-b border-slate-700 pb-4">
+            <div className="flex items-start justify-between border-b border-outline-variant pb-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-xl">T</div>
+                  <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-white font-bold text-xl">T</div>
                   <div>
-                    <p className="font-bold text-slate-100 text-lg leading-tight">Taita</p>
-                    <p className="text-xs text-slate-500">tienda.taita.com.py</p>
+                    <p className="font-bold text-on-surface text-lg leading-tight">Taita</p>
+                    <p className="text-xs text-on-surface-variant">tienda.taita.com.py</p>
                   </div>
                 </div>
-                <p className="text-2xl font-extrabold text-slate-100 mt-2">PRESUPUESTO</p>
+                <p className="text-2xl font-extrabold text-on-surface mt-2">PRESUPUESTO</p>
                 {budgetConfirmed && (
-                  <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-                    ✅ Venta confirmada
+                  <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-lg bg-tertiary-fixed border border-tertiary-fixed-dim text-tertiary text-xs font-semibold">
+                    <span className="material-symbol text-[18px]" aria-hidden="true">check_circle</span> Venta confirmada
                   </span>
                 )}
               </div>
-              <div className="text-right text-sm text-slate-400 space-y-1">
-                <p>Fecha: <span className="text-slate-200 font-medium">{todayLabel()}</span></p>
+              <div className="text-right text-sm text-on-surface-variant space-y-1">
+                <p>Fecha: <span className="text-on-surface font-medium">{todayLabel()}</span></p>
                 {savedBudgetId && (
-                  <p>Nro: <span className="text-slate-200 font-medium">#{savedBudgetId}</span></p>
+                  <p>Nro: <span className="text-on-surface font-medium">#{savedBudgetId}</span></p>
                 )}
                 {contact && (
                   <>
-                    <p>Cliente: <span className="text-slate-200 font-medium">{contact.name}</span></p>
-                    {contact.ruc    && <p>RUC: <span className="text-slate-200 font-medium">{contact.ruc}</span></p>}
-                    {contact.phone1 && <p>Tel: <span className="text-slate-200 font-medium">{contact.phone1}</span></p>}
+                    <p>Cliente: <span className="text-on-surface font-medium">{contact.name}</span></p>
+                    {contact.ruc    && <p>RUC: <span className="text-on-surface font-medium">{contact.ruc}</span></p>}
+                    {contact.phone1 && <p>Tel: <span className="text-on-surface font-medium">{contact.phone1}</span></p>}
                     {contact.address && <p className="max-w-[200px] text-right">{contact.address}</p>}
                   </>
                 )}
@@ -741,37 +741,37 @@ export default function BudgetPage() {
             </div>
 
             {/* Items table */}
-            <div className="rounded-xl overflow-hidden border border-slate-700">
+            <div className="rounded-xl overflow-hidden border border-outline-variant">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+                  <tr className="bg-surface-container-lowest text-on-surface-variant text-xs uppercase tracking-wider">
                     <th className="px-4 py-2.5 text-left font-semibold">Producto</th>
                     <th className="px-4 py-2.5 text-center font-semibold">Cant.</th>
                     <th className="px-4 py-2.5 text-right font-semibold">Precio unit.</th>
                     <th className="px-4 py-2.5 text-right font-semibold">Subtotal</th>
-                    <th className="px-4 py-2.5 text-center font-semibold no-print">⚙</th>
+                    <th className="px-4 py-2.5 text-center font-semibold no-print"><span className="sr-only">Acciones</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-surface-container-high">
                   {items.map((it, idx) => (
-                    <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-3 text-slate-200">
+                    <tr key={idx} className="hover:bg-surface-container-low transition-colors">
+                      <td className="px-4 py-3 text-on-surface">
                         <p className="font-medium">{it.product.name}</p>
-                        <p className="text-xs text-slate-500">{it.product.sku}</p>
+                        <p className="text-xs text-on-surface-variant">{it.product.sku}</p>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <input type="number" min="1" className="w-16 text-center bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-brand-500 no-print"
+                        <input type="number" min="1" className="w-16 text-center bg-surface-container-lowest border border-outline-variant rounded-lg px-2 py-1 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container no-print"
                           value={it.qty} onChange={(e) => updateItemQty(idx, e.target.value)} />
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <input type="number" min="0" className="w-28 text-right bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-brand-500 no-print"
+                        <input type="number" min="0" className="w-28 text-right bg-surface-container-lowest border border-outline-variant rounded-lg px-2 py-1 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container no-print"
                           value={it.unitPrice} onChange={(e) => updateItemPrice(idx, e.target.value)} />
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-slate-200">
+                      <td className="px-4 py-3 text-right font-semibold text-on-surface">
                         {formatPYG(it.qty * it.unitPrice)}
                       </td>
                       <td className="px-4 py-3 text-center no-print">
-                        <button onClick={() => removeItem(idx)} className="text-slate-600 hover:text-red-400 transition-colors" title="Eliminar">
+                        <button onClick={() => removeItem(idx)} className="text-outline hover:text-error transition-colors" title="Eliminar">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
@@ -786,42 +786,42 @@ export default function BudgetPage() {
             {/* Totals */}
             <div className="flex justify-end">
               <div className="w-72 space-y-2 text-sm">
-                <div className="flex justify-between text-slate-400">
+                <div className="flex justify-between text-on-surface-variant">
                   <span>Subtotal productos</span>
-                  <span className="font-medium text-slate-200">{formatPYG(subtotal)}</span>
+                  <span className="font-medium text-on-surface">{formatPYG(subtotal)}</span>
                 </div>
                 {withDelivery && (
-                  <div className={`flex justify-between rounded-lg px-3 py-2 border ${tier ? tierColors[tier.color] : 'border-slate-700'}`}>
+                  <div className={`flex justify-between rounded-lg px-3 py-2 border ${tier ? tierColors[tier.color] : 'border-outline-variant'}`}>
                     <span className="flex items-center gap-1.5">
-                      🚚 Delivery
+                      <span className="material-symbol text-[16px] align-[-3px] mr-1" aria-hidden="true">local_shipping</span>Delivery
                       {distance && <span className="text-xs opacity-70">({parseFloat(distance).toFixed(1)} km)</span>}
                     </span>
                     <span className="font-semibold">{formatPYG(deliveryCost)}</span>
                   </div>
                 )}
-                <div className="flex justify-between pt-2 border-t border-slate-700">
-                  <span className="font-bold text-slate-100 text-base">TOTAL</span>
-                  <span className="font-extrabold text-brand-400 text-xl">{formatPYG(total)}</span>
+                <div className="flex justify-between pt-2 border-t border-outline-variant">
+                  <span className="font-bold text-on-surface text-base">TOTAL</span>
+                  <span className="font-extrabold text-primary-container text-xl">{formatPYG(total)}</span>
                 </div>
               </div>
             </div>
 
             {notes && (
-              <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 text-sm text-slate-400">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Observaciones</p>
-                <p className="text-slate-300">{notes}</p>
+              <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant text-sm text-on-surface-variant">
+                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Observaciones</p>
+                <p className="text-on-surface">{notes}</p>
               </div>
             )}
 
-            <div className="text-center text-xs text-slate-600 pt-2 border-t border-slate-800">
+            <div className="text-center text-xs text-outline pt-2 border-t border-surface-container-high">
               Presupuesto válido por 48 hs · tienda.taita.com.py
             </div>
           </div>
         )}
 
         {items.length === 0 && (
-          <div className="card p-10 text-center text-slate-500 no-print">
-            <div className="text-4xl mb-3">📋</div>
+          <div className="card p-10 text-center text-on-surface-variant no-print">
+            <span className="material-symbol text-[40px] text-outline block mb-3" aria-hidden="true">request_quote</span>
             <p className="text-sm">Agregá productos para generar el presupuesto</p>
           </div>
         )}

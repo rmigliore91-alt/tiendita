@@ -13,7 +13,7 @@ function SortableHeader({ label, field, sortBy, sortOrder, onSort, className = '
       onClick={() => onSort(field)}
     >
       <span className={`inline-flex items-center gap-1 transition-colors duration-100 ${
-        active ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-200'
+        active ? 'text-primary-container' : 'text-on-surface-variant group-hover:text-on-surface'
       }`}>
         {label}
         <span className={`text-xs transition-opacity duration-100 ${
@@ -29,13 +29,13 @@ function SortableHeader({ label, field, sortBy, sortOrder, onSort, className = '
 // ─── helpers ───────────────────────────────────────────────────────────────
 
 function stockColor(current, minimum) {
-  if (current === 0) return 'text-red-400 font-bold';
-  if (current <= minimum) return 'text-amber-400 font-semibold';
-  return 'text-emerald-400 font-semibold';
+  if (current === 0) return 'text-error font-bold';
+  if (current <= minimum) return 'text-on-warning-container font-semibold';
+  return 'text-tertiary font-semibold';
 }
 
 function priceDisplay(price) {
-  if (!price || price === 0) return <span className="text-slate-500 italic text-xs">Consultar</span>;
+  if (!price || price === 0) return <span className="text-on-surface-variant italic text-xs">Consultar</span>;
   return formatPYG(price);
 }
 
@@ -56,13 +56,13 @@ function expiryBadge(expiryDate) {
   const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (days < 0) {
-    return { label: 'VENCIDO', className: 'bg-red-500/20 text-red-300 border border-red-500/40', icon: '🔴' };
+    return { label: 'VENCIDO', className: 'bg-error-container text-error border border-error-outline', icon: 'bg-error-dot' };
   }
   if (days <= 7) {
-    return { label: `Vence en ${days}d`, className: 'bg-orange-500/20 text-orange-300 border border-orange-500/40', icon: '🟠' };
+    return { label: `Vence en ${days}d`, className: 'bg-caution-container text-on-caution-container border border-caution-outline', icon: 'bg-caution' };
   }
   if (days <= 30) {
-    return { label: `Vence en ${days}d`, className: 'bg-amber-500/20 text-amber-300 border border-amber-500/40', icon: '🟡' };
+    return { label: `Vence en ${days}d`, className: 'bg-warning-container text-on-warning-container border border-warning-outline', icon: 'bg-warning' };
   }
   return null; // no alert needed
 }
@@ -246,9 +246,9 @@ export default function ProductsPage() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-slate-100">Productos</h2>
+          <h2 className="page-title">Productos</h2>
           {!loading && (
-            <p className="text-sm text-slate-500 mt-0.5">{total} producto{total !== 1 ? 's' : ''} en total</p>
+            <p className="text-sm text-on-surface-variant mt-0.5">{total} producto{total !== 1 ? 's' : ''} en total</p>
           )}
         </div>
         {isAdmin && (
@@ -266,7 +266,7 @@ export default function ProductsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
           <div className="relative flex-1">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none"
               fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
@@ -282,10 +282,10 @@ export default function ProductsPage() {
             {searchInput && (
               <button
                 onClick={() => setSearchInput('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
                 aria-label="Limpiar búsqueda"
               >
-                ✕
+                <span className="material-symbol text-[18px]" aria-hidden="true">close</span>
               </button>
             )}
           </div>
@@ -316,13 +316,13 @@ export default function ProductsPage() {
 
       {/* ── Error ── */}
       {error && (
-        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">{error}</div>
+        <div className="p-3 rounded-lg bg-error-container border border-error-outline text-sm text-error">{error}</div>
       )}
 
       {/* ── Table ── */}
       {loading ? (
         <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -345,8 +345,8 @@ export default function ProductsPage() {
               <tbody>
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 10 : 9} className="text-center py-14 text-slate-500">
-                      <span className="text-3xl block mb-2">🔍</span>
+                    <td colSpan={isAdmin ? 10 : 9} className="text-center py-14 text-on-surface-variant">
+                      <span className="material-symbol text-[36px] text-outline block mb-2" aria-hidden="true">search_off</span>
                       No se encontraron productos con los filtros aplicados
                     </td>
                   </tr>
@@ -357,21 +357,21 @@ export default function ProductsPage() {
                       <tr key={p.id} className={!p.active ? 'opacity-40' : ''}>
                         {/* SKU */}
                         <td>
-                          <span className="font-mono text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
+                          <span className="font-mono text-xs text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded whitespace-nowrap">
                             {p.sku}
                           </span>
                         </td>
 
                         {/* Name */}
                         <td>
-                          <p className="font-medium text-slate-200 text-sm leading-tight max-w-xs">{p.name}</p>
+                          <p className="font-medium text-on-surface text-sm leading-tight min-w-[10rem] max-w-xs">{p.name}</p>
                         </td>
 
                         {/* Category */}
-                        <td className="text-slate-400 text-xs whitespace-nowrap">{p.category_name}</td>
+                        <td className="text-on-surface-variant text-xs whitespace-nowrap">{p.category_name}</td>
 
                         {/* Unit */}
-                        <td className="text-slate-400 text-xs">{p.unit}</td>
+                        <td className="text-on-surface-variant text-xs">{p.unit}</td>
 
                         {/* Stock current — colored */}
                         <td className={`text-right text-sm tabular-nums ${stockColor(p.stock_current, p.stock_minimum)}`}>
@@ -379,10 +379,10 @@ export default function ProductsPage() {
                         </td>
 
                         {/* Stock minimum */}
-                        <td className="text-right text-slate-500 text-sm tabular-nums">{p.stock_minimum}</td>
+                        <td className="text-right text-on-surface-variant text-sm tabular-nums">{p.stock_minimum}</td>
 
                         {/* Sale price */}
-                        <td className="text-right text-sm text-slate-300 whitespace-nowrap">
+                        <td className="text-right text-sm text-on-surface whitespace-nowrap">
                           {priceDisplay(p.sale_price)}
                         </td>
 
@@ -390,24 +390,24 @@ export default function ProductsPage() {
                         <td className="text-center">
                           {p.expiry_date ? (
                             <div className="flex flex-col items-center gap-1">
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-on-surface-variant">
                                 {formatExpiryDate(p.expiry_date)}
                               </span>
                               {badge && (
                                 <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${badge.className}`}>
-                                  {badge.icon} {badge.label}
+                                  <span className={`w-1.5 h-1.5 rounded-full ${badge.icon}`} />{badge.label}
                                 </span>
                               )}
                             </div>
                           ) : (
-                            <span className="text-slate-600 text-xs">—</span>
+                            <span className="text-outline text-xs">—</span>
                           )}
                         </td>
 
                         {/* Status badge */}
                         <td className="text-center">
                           <span className={p.active ? 'badge badge-green' : 'badge badge-slate'}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${p.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                            <span className={`w-1.5 h-1.5 rounded-full ${p.active ? 'bg-success' : 'bg-surface-container-high'}`} />
                             {p.active ? 'Activo' : 'Inactivo'}
                           </span>
                         </td>
@@ -418,7 +418,7 @@ export default function ProductsPage() {
                             <div className="flex items-center justify-center gap-1">
                               <button
                                 onClick={() => openEdit(p)}
-                                className="p-1.5 rounded-lg hover:bg-brand-500/20 text-brand-400 transition-colors"
+                                className="p-1.5 rounded-lg hover:bg-primary-fixed text-primary-container transition-colors"
                                 title="Editar producto"
                               >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -430,8 +430,8 @@ export default function ProductsPage() {
                                 onClick={() => toggleActive(p)}
                                 className={`p-1.5 rounded-lg transition-colors ${
                                   p.active
-                                    ? 'hover:bg-red-500/20 text-red-400'
-                                    : 'hover:bg-emerald-500/20 text-emerald-400'
+                                    ? 'hover:bg-error-container text-error'
+                                    : 'hover:bg-tertiary-fixed text-tertiary'
                                 }`}
                                 title={p.active ? 'Desactivar' : 'Activar'}
                               >
@@ -458,7 +458,7 @@ export default function ProductsPage() {
 
           {/* ── Pagination ── */}
           {total > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-800 text-sm text-slate-400">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-surface-container-high text-sm text-on-surface-variant">
               <span>
                 Mostrando {from}–{to} de {total} resultado{total !== 1 ? 's' : ''}
               </span>
@@ -471,7 +471,7 @@ export default function ProductsPage() {
                 >
                   ← Anterior
                 </button>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-on-surface-variant">
                   Página {page} de {totalPages}
                 </span>
                 <button
@@ -499,7 +499,7 @@ export default function ProductsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Category */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Categoría *</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Categoría *</label>
               <select
                 className="form-input"
                 value={form.category_id}
@@ -513,7 +513,7 @@ export default function ProductsPage() {
 
             {/* Name */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Nombre *</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Nombre *</label>
               <input type="text" className="form-input"
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -522,7 +522,7 @@ export default function ProductsPage() {
 
             {/* SKU */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">SKU *</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">SKU *</label>
               <input type="text" className="form-input font-mono"
                 value={form.sku}
                 onChange={(e) => setForm((p) => ({ ...p, sku: e.target.value }))}
@@ -531,7 +531,7 @@ export default function ProductsPage() {
 
             {/* Unit */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Unidad *</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Unidad *</label>
               <input type="text" className="form-input"
                 value={form.unit}
                 onChange={(e) => setForm((p) => ({ ...p, unit: e.target.value }))}
@@ -541,7 +541,7 @@ export default function ProductsPage() {
             {/* Stock initial (create only) */}
             {!editing && (
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Stock Inicial</label>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Stock Inicial</label>
                 <input type="number" min="0" className="form-input"
                   value={form.stock_current}
                   onChange={(e) => setForm((p) => ({ ...p, stock_current: e.target.value }))} />
@@ -550,7 +550,7 @@ export default function ProductsPage() {
 
             {/* Stock minimum */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Stock Mínimo</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Stock Mínimo</label>
               <input type="number" min="0" className="form-input"
                 value={form.stock_minimum}
                 onChange={(e) => setForm((p) => ({ ...p, stock_minimum: e.target.value }))} />
@@ -558,7 +558,7 @@ export default function ProductsPage() {
 
             {/* Cost price */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Precio Costo (₲)</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Precio Costo (₲)</label>
               <input type="number" min="0" className="form-input"
                 value={form.cost_price}
                 onChange={(e) => setForm((p) => ({ ...p, cost_price: e.target.value }))} />
@@ -566,7 +566,7 @@ export default function ProductsPage() {
 
             {/* Sale price */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Precio Venta (₲)</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Precio Venta (₲)</label>
               <input type="number" min="0" className="form-input"
                 value={form.sale_price}
                 onChange={(e) => setForm((p) => ({ ...p, sale_price: e.target.value }))} />
@@ -574,9 +574,9 @@ export default function ProductsPage() {
 
             {/* Expiry date */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-400 mb-1.5 flex items-center gap-1.5">
-                📅 Fecha de Vencimiento
-                <span className="text-slate-600 font-normal">(opcional)</span>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5 flex items-center gap-1.5">
+                <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">event</span> Fecha de vencimiento
+                <span className="text-outline font-normal">(opcional)</span>
               </label>
               <input
                 type="date"
@@ -588,8 +588,8 @@ export default function ProductsPage() {
               {form.expiry_date && (() => {
                 const badge = expiryBadge(form.expiry_date);
                 return badge ? (
-                  <p className={`mt-1.5 text-xs font-semibold flex items-center gap-1 ${badge.className.includes('red') ? 'text-red-400' : badge.className.includes('orange') ? 'text-orange-400' : 'text-amber-400'}`}>
-                    {badge.icon} {badge.label === 'VENCIDO' ? 'Esta fecha ya venció' : `Alerta: ${badge.label}`}
+                  <p className={`mt-1.5 text-xs font-semibold flex items-center gap-1 ${badge.className.includes('error') ? 'text-error' : badge.className.includes('caution') ? 'text-on-caution-container' : 'text-on-warning-container'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${badge.icon}`} />{badge.label === 'VENCIDO' ? 'Esta fecha ya venció' : `Alerta: ${badge.label}`}
                   </p>
                 ) : null;
               })()}
@@ -597,7 +597,7 @@ export default function ProductsPage() {
           </div>
 
           {formError && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">
+            <div className="p-3 rounded-lg bg-error-container border border-error-outline text-sm text-error">
               {formError}
             </div>
           )}

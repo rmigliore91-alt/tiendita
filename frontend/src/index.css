@@ -2,76 +2,119 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Sistema Taita — mismo lenguaje visual que el Portal Taita (RRHH) */
+
 @layer base {
   * {
     box-sizing: border-box;
   }
 
-  body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  body {
+    @apply bg-surface text-on-surface font-sans;
   }
-  ::-webkit-scrollbar-track {
-    @apply bg-slate-900;
+
+  /* Títulos de página con la slab de la marca (eco del logo) */
+  h1 {
+    font-family: 'Arvo', Georgia, serif;
   }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-slate-600 rounded-full;
+
+  /* Cifras alineadas en tablas */
+  table {
+    font-variant-numeric: tabular-nums;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-500;
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d9d3c7 transparent;
+  }
+
+  ::selection {
+    background-color: #fdf0d5;
+    color: #3a2a00;
+  }
+
+  /* Los inputs de fecha y número toman el esquema claro */
+  input,
+  select,
+  textarea {
+    color-scheme: light;
   }
 }
 
 @layer components {
-  /* Card container */
+  .material-symbol {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    -webkit-font-smoothing: antialiased;
+  }
+  .material-symbol.filled {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  /* Tarjeta — elevación nivel 1 */
   .card {
-    @apply bg-slate-900 border border-slate-800 rounded-xl shadow-lg;
+    @apply bg-surface-container-lowest border border-surface-container-high rounded-xl shadow-card;
   }
 
-  /* Form inputs */
+  /* Título de página (h2 dentro de cada vista) */
+  .page-title {
+    @apply text-headline-md font-bold text-on-surface tracking-tight;
+    font-family: 'Arvo', Georgia, serif;
+  }
+
+  /* Campos de formulario */
   .form-input {
-    @apply w-full bg-slate-800 border border-slate-700 text-slate-100
-           rounded-lg px-3 py-2 text-sm placeholder-slate-500
-           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-           transition-all duration-150;
+    @apply w-full h-11 bg-surface-container-lowest text-on-surface rounded-lg px-3.5 text-body-md
+           placeholder:text-outline shadow-input border-0
+           focus:outline-none focus:shadow-input-focus
+           transition-all duration-200;
+  }
+  textarea.form-input {
+    @apply h-auto py-2.5;
   }
 
-  /* Primary button */
+  /* Botones */
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-500
-           text-white text-sm font-medium rounded-lg
-           transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 h-11 px-4 bg-primary-container hover:bg-primary
+           text-on-primary text-label-lg font-semibold rounded-lg shadow-btn-primary whitespace-nowrap
+           transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  /* Secondary button */
   .btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700
-           text-slate-200 text-sm font-medium rounded-lg border border-slate-700
-           transition-all duration-150 active:scale-95 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 h-11 px-4 bg-transparent hover:bg-surface-container-low
+           text-on-surface-variant text-label-lg font-semibold rounded-lg border border-outline-variant hover:border-outline
+           whitespace-nowrap transition-all duration-150 active:scale-[0.98] disabled:opacity-50;
   }
 
-  /* Danger button */
   .btn-danger {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500
-           text-white text-sm font-medium rounded-lg
-           transition-all duration-150 active:scale-95 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 h-11 px-4 bg-error hover:opacity-90
+           text-on-error text-label-lg font-semibold rounded-lg whitespace-nowrap
+           transition-all duration-150 active:scale-[0.98] disabled:opacity-50;
   }
 
-  /* Table styles */
+  /* Tablas */
   .table-wrapper {
-    @apply w-full overflow-x-auto rounded-xl border border-slate-800;
+    @apply w-full overflow-x-auto rounded-xl bg-surface-container-lowest border border-surface-container-high shadow-card;
   }
 
   table.data-table {
-    @apply w-full text-sm text-slate-300 border-collapse;
+    @apply w-full text-body-sm text-on-surface border-collapse;
   }
 
   table.data-table thead {
-    @apply bg-slate-800/60 text-slate-400 text-xs uppercase tracking-wider;
+    @apply bg-surface-container-low text-outline text-label-sm uppercase tracking-wider;
   }
 
   table.data-table thead th {
@@ -79,26 +122,26 @@
   }
 
   table.data-table tbody tr {
-    @apply border-t border-slate-800 hover:bg-slate-800/40 transition-colors duration-100;
+    @apply border-t border-surface-container-high/60 hover:bg-surface-container-low transition-colors duration-100;
   }
 
   table.data-table tbody td {
     @apply px-4 py-3;
   }
 
-  /* Badge base */
+  /* Badges (píldoras de estado con punto) */
   .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-semibold whitespace-nowrap;
   }
 
-  .badge-green  { @apply badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30; }
-  .badge-yellow { @apply badge bg-amber-500/20  text-amber-400  border border-amber-500/30; }
-  .badge-red    { @apply badge bg-red-500/20    text-red-400    border border-red-500/30; }
-  .badge-blue   { @apply badge bg-brand-500/20  text-brand-300  border border-brand-500/30; }
-  .badge-slate  { @apply badge bg-slate-500/20  text-slate-400  border border-slate-500/30; }
+  .badge-green  { @apply badge bg-tertiary-fixed text-tertiary; }
+  .badge-yellow { @apply badge bg-warning-container text-on-warning-container; }
+  .badge-red    { @apply badge bg-error-container text-on-error-container; }
+  .badge-blue   { @apply badge bg-primary-fixed text-on-primary-fixed; }
+  .badge-slate  { @apply badge bg-surface-container text-on-surface-variant; }
 }
 
-/* Smooth page transitions */
+/* Transición suave entre páginas */
 .page-enter {
   animation: fadeIn 0.2s ease-out;
 }
@@ -106,4 +149,13 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter { animation: none; }
+}
+
+/* Impresión del presupuesto: solo papel blanco */
+@media print {
+  body { background: #ffffff; }
 }

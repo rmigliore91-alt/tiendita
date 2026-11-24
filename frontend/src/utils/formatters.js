@@ -5,7 +5,7 @@
 export function formatPYG(amount) {
   if (amount == null || isNaN(amount)) return '₲ 0';
   return (
-    '₲ ' +
+    '₲\u00A0' +
     Math.round(amount)
       .toString()
       .replace(/\B(?=(\d{3})+(?!\d))/g, '.')
@@ -42,9 +42,9 @@ export function formatDateTime(dateStr) {
  * Return stock status info based on current vs minimum stock.
  */
 export function stockStatus(current, minimum) {
-  if (current === 0) return { label: 'Sin stock', className: 'badge-red', dot: 'bg-red-400' };
-  if (current <= minimum) return { label: 'Stock bajo', className: 'badge-yellow', dot: 'bg-amber-400' };
-  return { label: 'Stock OK', className: 'badge-green', dot: 'bg-emerald-400' };
+  if (current === 0) return { label: 'Sin stock', className: 'badge-red', dot: 'bg-error-dot' };
+  if (current <= minimum) return { label: 'Stock bajo', className: 'badge-yellow', dot: 'bg-warning' };
+  return { label: 'Stock OK', className: 'badge-green', dot: 'bg-success' };
 }
 
 /**

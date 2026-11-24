@@ -49,11 +49,11 @@ function ProductSearchFilter({ products, value, onChange }) {
       {label ? (
         // Selected state — show chip
         <div className="flex items-center gap-2 form-input py-2 pr-2">
-          <span className="flex-1 text-sm text-slate-200 truncate">{label}</span>
+          <span className="flex-1 text-sm text-on-surface truncate">{label}</span>
           <button
             type="button"
             onClick={clear}
-            className="shrink-0 text-slate-500 hover:text-slate-300 transition-colors"
+            className="shrink-0 text-on-surface-variant hover:text-on-surface transition-colors"
             title="Limpiar filtro"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -65,7 +65,7 @@ function ProductSearchFilter({ products, value, onChange }) {
         // Search input state
         <div className="relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-            <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
@@ -83,21 +83,21 @@ function ProductSearchFilter({ products, value, onChange }) {
       )}
 
       {open && !label && (
-        <div className="absolute z-30 w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+        <div className="absolute z-30 w-full mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
           {filtered.length > 0 ? (
             filtered.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onMouseDown={() => pick(p)}
-                className="w-full text-left px-4 py-2.5 hover:bg-slate-700 transition-colors"
+                className="w-full text-left px-4 py-2.5 hover:bg-surface-container transition-colors"
               >
-                <p className="text-sm font-medium text-slate-200">{p.name}</p>
-                <p className="text-xs text-slate-500">{p.sku}</p>
+                <p className="text-sm font-medium text-on-surface">{p.name}</p>
+                <p className="text-xs text-on-surface-variant">{p.sku}</p>
               </button>
             ))
           ) : (
-            <p className="px-4 py-3 text-sm text-slate-500">Sin resultados para "{query}"</p>
+            <p className="px-4 py-3 text-sm text-on-surface-variant">Sin resultados para "{query}"</p>
           )}
         </div>
       )}
@@ -113,8 +113,8 @@ function FilterChip({ label, active, onClick, colorClass = '' }) {
       onClick={onClick}
       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
         active
-          ? `${colorClass || 'border-brand-500 bg-brand-500/15 text-brand-400'}`
-          : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600 hover:text-slate-300'
+          ? `${colorClass || 'border-primary-container bg-primary-fixed text-primary-container'}`
+          : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline hover:text-on-surface'
       }`}
     >
       {label}
@@ -209,9 +209,9 @@ export default function HistoryPage() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-slate-100">Historial de Movimientos</h2>
+          <h2 className="page-title">Historial de Movimientos</h2>
           {activeFilterCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-brand-500/20 border border-brand-500/30 text-brand-400 text-xs font-semibold">
+            <span className="px-2 py-0.5 rounded-full bg-primary-fixed border border-primary-fixed-dim text-primary-container text-xs font-semibold">
               {activeFilterCount} filtro{activeFilterCount > 1 ? 's' : ''}
             </span>
           )}
@@ -248,7 +248,7 @@ export default function HistoryPage() {
         <div className="card p-4 space-y-4">
           {/* Quick chips row: type + sale_type */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipo</p>
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Tipo</p>
             <div className="flex flex-wrap gap-2">
               <FilterChip
                 label="Todos"
@@ -259,20 +259,20 @@ export default function HistoryPage() {
                 label="↑ ENTRADA"
                 active={filters.type === 'ENTRADA'}
                 onClick={() => handleFilter('type', filters.type === 'ENTRADA' ? '' : 'ENTRADA')}
-                colorClass="border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                colorClass="border-tertiary-container bg-tertiary-fixed text-tertiary"
               />
               <FilterChip
                 label="↓ SALIDA"
                 active={filters.type === 'SALIDA'}
                 onClick={() => handleFilter('type', filters.type === 'SALIDA' ? '' : 'SALIDA')}
-                colorClass="border-red-500 bg-red-500/15 text-red-400"
+                colorClass="border-error bg-error-container text-error"
               />
             </div>
           </div>
 
           {/* Sale type chips */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Destino</p>
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Destino</p>
             <div className="flex flex-wrap gap-2">
               <FilterChip
                 label="Todos"
@@ -280,16 +280,16 @@ export default function HistoryPage() {
                 onClick={() => handleFilter('sale_type', '')}
               />
               <FilterChip
-                label="🏠 Interna"
+                label="Interna"
                 active={filters.sale_type === 'interna'}
                 onClick={() => handleFilter('sale_type', filters.sale_type === 'interna' ? '' : 'interna')}
-                colorClass="border-violet-500 bg-violet-500/15 text-violet-300"
+                colorClass="border-brand bg-brand-soft text-brand-ink"
               />
               <FilterChip
-                label="🌐 Externa"
+                label="Externa"
                 active={filters.sale_type === 'externa'}
                 onClick={() => handleFilter('sale_type', filters.sale_type === 'externa' ? '' : 'externa')}
-                colorClass="border-amber-500 bg-amber-500/15 text-amber-300"
+                colorClass="border-warning bg-warning-container text-on-warning-container"
               />
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function HistoryPage() {
           {/* Search row: product, category, user */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">Producto</label>
+              <label className="block text-xs text-on-surface-variant mb-1.5">Producto</label>
               <ProductSearchFilter
                 products={products}
                 value={filters.product_id}
@@ -306,7 +306,7 @@ export default function HistoryPage() {
             </div>
 
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">Categoría</label>
+              <label className="block text-xs text-on-surface-variant mb-1.5">Categoría</label>
               <select
                 className="form-input"
                 value={filters.category_id}
@@ -319,7 +319,7 @@ export default function HistoryPage() {
             </div>
 
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">Usuario</label>
+              <label className="block text-xs text-on-surface-variant mb-1.5">Usuario</label>
               <select
                 className="form-input"
                 value={filters.user_id}
@@ -335,7 +335,7 @@ export default function HistoryPage() {
           {/* Date range */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">Fecha desde</label>
+              <label className="block text-xs text-on-surface-variant mb-1.5">Fecha desde</label>
               <input
                 type="date"
                 className="form-input"
@@ -345,7 +345,7 @@ export default function HistoryPage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">Fecha hasta</label>
+              <label className="block text-xs text-on-surface-variant mb-1.5">Fecha hasta</label>
               <input
                 type="date"
                 className="form-input"
@@ -359,7 +359,7 @@ export default function HistoryPage() {
           {activeFilterCount > 0 && (
             <div className="flex justify-end">
               <button onClick={clearFilters} className="btn-secondary text-xs py-1.5">
-                ✕ Limpiar {activeFilterCount} filtro{activeFilterCount > 1 ? 's' : ''}
+                <span className="material-symbol text-[16px]" aria-hidden="true">close</span> Limpiar {activeFilterCount} filtro{activeFilterCount > 1 ? 's' : ''}
               </button>
             </div>
           )}
@@ -368,7 +368,7 @@ export default function HistoryPage() {
 
       {/* ── Results summary ── */}
       {!loading && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-on-surface-variant">
           {pagination.total === 0
             ? 'Sin resultados'
             : `${pagination.total} movimiento${pagination.total !== 1 ? 's' : ''} encontrado${pagination.total !== 1 ? 's' : ''}`}
@@ -379,7 +379,7 @@ export default function HistoryPage() {
       {/* ── Table ── */}
       {loading ? (
         <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -402,9 +402,9 @@ export default function HistoryPage() {
               <tbody>
                 {data.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-12 text-slate-500">
+                    <td colSpan={10} className="text-center py-12 text-on-surface-variant">
                       <div className="flex flex-col items-center gap-3">
-                        <svg className="w-10 h-10 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-10 h-10 text-outline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
@@ -420,12 +420,12 @@ export default function HistoryPage() {
                 ) : (
                   data.map((m) => (
                     <tr key={m.id}>
-                      <td className="text-slate-400 text-xs whitespace-nowrap">{formatDateTime(m.created_at)}</td>
+                      <td className="text-on-surface-variant text-xs whitespace-nowrap">{formatDateTime(m.created_at)}</td>
                       <td>
-                        <p className="text-slate-200 text-sm font-medium">{m.product_name}</p>
-                        <p className="text-slate-500 text-xs">{m.sku}</p>
+                        <p className="text-on-surface text-sm font-medium min-w-[11rem]">{m.product_name}</p>
+                        <p className="text-on-surface-variant text-xs">{m.sku}</p>
                       </td>
-                      <td className="text-slate-400 text-xs">{m.category_name}</td>
+                      <td className="text-on-surface-variant text-xs">{m.category_name}</td>
                       <td className="text-center">
                         <span className={`badge text-xs font-bold ${
                           m.type === 'ENTRADA' ? 'badge-green' : 'badge-red'
@@ -437,20 +437,20 @@ export default function HistoryPage() {
                         {m.type === 'SALIDA' && m.sale_type ? (
                           <span className={`badge text-xs ${
                             m.sale_type === 'interna'
-                              ? 'bg-violet-500/15 text-violet-300 border-violet-500/30'
-                              : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                              ? 'bg-brand-soft text-brand-ink border-secondary-fixed-dim'
+                              : 'bg-warning-container text-on-warning-container border-warning-outline'
                           }`}>
-                            {m.sale_type === 'interna' ? '🏠 Interna' : '🌐 Externa'}
+                            {m.sale_type === 'interna' ? 'Interna' : 'Externa'}
                           </span>
                         ) : (
-                          <span className="text-slate-600 text-xs">—</span>
+                          <span className="text-outline text-xs">—</span>
                         )}
                       </td>
-                      <td className="text-right font-semibold text-slate-200">{m.quantity}</td>
-                      <td className="text-right text-slate-300 text-sm">{formatPYG(m.unit_price)}</td>
-                      <td className="text-right text-slate-200 font-semibold text-sm">{formatPYG(m.total_price)}</td>
-                      <td className="text-slate-400 text-xs">{m.user_name}</td>
-                      <td className="text-slate-500 text-xs max-w-32 truncate" title={m.notes}>{m.notes || '—'}</td>
+                      <td className="text-right font-semibold text-on-surface">{m.quantity}</td>
+                      <td className="text-right text-on-surface text-sm">{formatPYG(m.unit_price)}</td>
+                      <td className="text-right text-on-surface font-semibold text-sm">{formatPYG(m.total_price)}</td>
+                      <td className="text-on-surface-variant text-xs">{m.user_name}</td>
+                      <td className="text-on-surface-variant text-xs max-w-32 truncate" title={m.notes}>{m.notes || '—'}</td>
                     </tr>
                   ))
                 )}

@@ -46,7 +46,7 @@ function ProductCombobox({ products, selected, onSelect, placeholder = 'Buscar p
         />
         {query && (
           <button type="button" onClick={clear}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -54,15 +54,15 @@ function ProductCombobox({ products, selected, onSelect, placeholder = 'Buscar p
         )}
       </div>
       {open && !selected && (
-        <div className="absolute z-30 w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+        <div className="absolute z-30 w-full mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
           {filtered.length > 0 ? filtered.map((p) => (
             <button key={p.id} type="button" onMouseDown={() => pick(p)}
-              className="w-full text-left px-4 py-2.5 hover:bg-slate-700 transition-colors">
-              <p className="text-sm font-medium text-slate-200">{p.name}</p>
-              <p className="text-xs text-slate-500">{p.sku} · Stock: {p.stock_current} {p.unit}</p>
+              className="w-full text-left px-4 py-2.5 hover:bg-surface-container transition-colors">
+              <p className="text-sm font-medium text-on-surface">{p.name}</p>
+              <p className="text-xs text-on-surface-variant">{p.sku} · Stock: {p.stock_current} {p.unit}</p>
             </button>
           )) : (
-            <p className="px-4 py-3 text-sm text-slate-500">Sin resultados para "{query}"</p>
+            <p className="px-4 py-3 text-sm text-on-surface-variant">Sin resultados para "{query}"</p>
           )}
         </div>
       )}
@@ -110,18 +110,18 @@ function effectiveCostPerUnit(unitPrice, deliveryShare, quantity) {
 function BelowCostWarning({ items }) {
   if (!items.length) return null;
   return (
-    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
-      <p className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-        ⚠️ Precio de venta por debajo del costo real
+    <div className="p-3 rounded-xl bg-warning-container border border-warning-outline space-y-1.5">
+      <p className="text-xs font-bold text-on-warning-container uppercase tracking-wider flex items-center gap-1.5">
+        <span className="material-symbol text-[18px]" aria-hidden="true">warning</span> Precio de venta por debajo del costo real
       </p>
       {items.map((it, i) => (
-        <p key={i} className="text-xs text-amber-300">
+        <p key={i} className="text-xs text-on-warning-container">
           <span className="font-semibold">{it.name}</span>: venta{' '}
           <span className="font-bold">{formatPYG(it.salePrice)}</span> &lt; costo real{' '}
           <span className="font-bold">{formatPYG(it.realCost)}</span>
         </p>
       ))}
-      <p className="text-xs text-amber-500 mt-1">
+      <p className="text-xs text-on-warning-container mt-1">
         Actualizar el precio de venta para evitar pérdidas.
       </p>
     </div>
@@ -308,7 +308,7 @@ export default function MovementsPage() {
         }
         registered++;
       }
-      setSuccess(`✓ ${registered} entrada(s) registradas correctamente`);
+      setSuccess(`${registered} entrada(s) registradas correctamente`);
       setBelowCostWarnings(warnings);
       const updRes = await client.get('/products?active=true&page=1&limit=500');
       setProducts(updRes.data.data);
@@ -337,21 +337,21 @@ export default function MovementsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <h2 className="text-xl font-bold text-slate-100">Registrar Movimiento de Stock</h2>
+      <h2 className="page-title">Registrar Movimiento de Stock</h2>
 
       <div className="card p-6 space-y-5" id="movement-form">
 
         {/* ── Movement type toggle ── */}
         <div>
-          <label className="block text-xs font-medium text-slate-400 mb-2">Tipo de Movimiento *</label>
+          <label className="block text-xs font-medium text-on-surface-variant mb-2">Tipo de Movimiento *</label>
           <div className="grid grid-cols-2 gap-3">
             <button type="button"
               onClick={() => { handleChange('type', 'ENTRADA'); setMultiMode(false); }}
               id="btn-type-entrada"
               className={`p-4 rounded-xl border-2 font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 ${
                 form.type === 'ENTRADA'
-                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                  ? 'border-tertiary-container bg-tertiary-fixed text-tertiary'
+                  : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline'
               }`}>
               <span className="text-xl">↑</span> ENTRADA
             </button>
@@ -360,8 +360,8 @@ export default function MovementsPage() {
               id="btn-type-salida"
               className={`p-4 rounded-xl border-2 font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 ${
                 form.type === 'SALIDA'
-                  ? 'border-red-500 bg-red-500/10 text-red-400'
-                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                  ? 'border-error bg-error-container text-error'
+                  : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline'
               }`}>
               <span className="text-xl">↓</span> SALIDA
             </button>
@@ -370,18 +370,18 @@ export default function MovementsPage() {
 
         {/* ── Multi-entrada toggle ── */}
         {form.type === 'ENTRADA' && (
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low border border-outline-variant">
             <button type="button" onClick={() => setMultiMode(false)} id="btn-mode-single"
               className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                !multiMode ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                !multiMode ? 'bg-tertiary-container text-white' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
               }`}>
               1 producto
             </button>
             <button type="button" onClick={() => setMultiMode(true)} id="btn-mode-multi"
               className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                multiMode ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                multiMode ? 'bg-tertiary-container text-white' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
               }`}>
-              📦 Múltiples productos
+              Múltiples productos
             </button>
           </div>
         )}
@@ -393,48 +393,48 @@ export default function MovementsPage() {
           <div className="space-y-4">
 
             {/* Add item row */}
-            <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-700 space-y-3">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Agregar producto</p>
+            <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant space-y-3">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Agregar producto</p>
               <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Producto</label>
+                <label className="block text-xs text-on-surface-variant mb-1.5">Producto</label>
                 <ProductCombobox products={products} selected={multiProduct}
                   onSelect={setMultiProduct} id="multi-product-search" />
               </div>
               {multiProduct && (
-                <div className="grid grid-cols-4 gap-2 p-3 rounded-lg bg-slate-800/60 border border-slate-700 text-xs">
+                <div className="grid grid-cols-4 gap-2 p-3 rounded-lg bg-surface-container-low border border-outline-variant text-xs">
                   <div>
-                    <p className="text-slate-500 mb-0.5">Stock actual</p>
-                    <p className="font-bold text-slate-200 text-base">{multiProduct.stock_current}</p>
-                    <p className="text-slate-500">{multiProduct.unit}</p>
+                    <p className="text-on-surface-variant mb-0.5">Stock actual</p>
+                    <p className="font-bold text-on-surface text-base">{multiProduct.stock_current}</p>
+                    <p className="text-on-surface-variant">{multiProduct.unit}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500 mb-0.5">Precio venta</p>
-                    <p className="font-semibold text-slate-300">{multiProduct.sale_price > 0 ? formatPYG(multiProduct.sale_price) : '—'}</p>
+                    <p className="text-on-surface-variant mb-0.5">Precio venta</p>
+                    <p className="font-semibold text-on-surface">{multiProduct.sale_price > 0 ? formatPYG(multiProduct.sale_price) : '—'}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500 mb-0.5">Costo actual</p>
-                    <p className="font-semibold text-slate-300">{multiProduct.cost_price > 0 ? formatPYG(multiProduct.cost_price) : '—'}</p>
+                    <p className="text-on-surface-variant mb-0.5">Costo actual</p>
+                    <p className="font-semibold text-on-surface">{multiProduct.cost_price > 0 ? formatPYG(multiProduct.cost_price) : '—'}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500 mb-0.5">Categoría</p>
-                    <p className="text-slate-300 leading-tight">{multiProduct.category_name}</p>
+                    <p className="text-on-surface-variant mb-0.5">Categoría</p>
+                    <p className="text-on-surface leading-tight">{multiProduct.category_name}</p>
                   </div>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Cantidad *</label>
+                  <label className="block text-xs text-on-surface-variant mb-1.5">Cantidad *</label>
                   <input type="number" min="1" className="form-input" value={multiQty}
                     onChange={(e) => setMultiQty(e.target.value)} id="multi-qty" />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Precio de compra (₲)</label>
+                  <label className="block text-xs text-on-surface-variant mb-1.5">Precio de compra (₲)</label>
                   <input type="number" min="0" className="form-input" placeholder="0"
                     value={multiPrice} onChange={(e) => setMultiPrice(e.target.value)} id="multi-price" />
                 </div>
               </div>
               <button type="button" onClick={addMultiItem} disabled={!canAddMulti}
-                className="w-full py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-2 rounded-lg bg-tertiary hover:bg-tertiary-container text-white text-sm font-semibold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 id="btn-add-multi-item">
                 + Agregar a la lista
               </button>
@@ -444,14 +444,14 @@ export default function MovementsPage() {
             {multiItems.length > 0 && (
               <div className="space-y-3">
                 {/* Delivery cost input — above the table */}
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-600 space-y-2">
+                <div className="p-4 rounded-xl bg-surface-container-low border border-outline space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                      🚛 Costo de delivery del proveedor (₲)
-                      <span className="text-slate-500 font-normal">(opcional)</span>
+                    <label className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                      <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">local_shipping</span> Costo de delivery del proveedor (₲)
+                      <span className="text-on-surface-variant font-normal">(opcional)</span>
                     </label>
                     {totalDeliveryCost > 0 && (
-                      <span className="text-xs text-slate-400 bg-slate-700 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
                         se distribuye entre {multiItems.length} producto(s)
                       </span>
                     )}
@@ -465,66 +465,66 @@ export default function MovementsPage() {
                     id="multi-delivery-cost"
                   />
                   {totalDeliveryCost > 0 && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-on-surface-variant">
                       Distribución proporcional por valor de compra de cada producto
                     </p>
                   )}
                 </div>
 
                 {/* Table */}
-                <div className="rounded-xl overflow-hidden border border-slate-700">
+                <div className="rounded-xl overflow-hidden border border-outline-variant">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+                      <tr className="bg-surface-container-lowest text-on-surface-variant text-xs uppercase tracking-wider">
                         <th className="px-3 py-2 text-left font-semibold">Producto</th>
                         <th className="px-3 py-2 text-center font-semibold">Cant.</th>
                         <th className="px-3 py-2 text-right font-semibold">P. Compra</th>
                         {totalDeliveryCost > 0 && (
-                          <th className="px-3 py-2 text-right font-semibold text-amber-400">+ Delivery</th>
+                          <th className="px-3 py-2 text-right font-semibold text-on-warning-container">+ Delivery</th>
                         )}
-                        <th className={`px-3 py-2 text-right font-semibold ${totalDeliveryCost > 0 ? 'text-emerald-400' : ''}`}>
+                        <th className={`px-3 py-2 text-right font-semibold ${totalDeliveryCost > 0 ? 'text-tertiary' : ''}`}>
                           {totalDeliveryCost > 0 ? 'Costo Real/u' : 'Subtotal'}
                         </th>
                         <th className="px-3 py-2 w-8" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800">
+                    <tbody className="divide-y divide-surface-container-high">
                       {multiItemsWithCost.map((item, idx) => {
                         const belowCost = item.realCostPerUnit > 0 &&
                           item.product.sale_price > 0 &&
                           item.product.sale_price < item.realCostPerUnit;
                         return (
-                          <tr key={idx} className={`transition-colors ${belowCost ? 'bg-amber-500/5' : 'hover:bg-slate-800/30'}`}>
+                          <tr key={idx} className={`transition-colors ${belowCost ? 'bg-warning-container' : 'hover:bg-surface-container-low'}`}>
                             <td className="px-3 py-2.5">
                               <div className="flex items-start gap-1.5">
-                                {belowCost && <span className="text-amber-400 text-sm mt-0.5" title="Precio venta por debajo del costo real">⚠️</span>}
+                                {belowCost && <span className="text-on-warning-container text-sm mt-0.5" title="Precio venta por debajo del costo real"><span className="material-symbol text-[16px]" aria-hidden="true">warning</span></span>}
                                 <div>
-                                  <p className="text-slate-200 font-medium leading-tight">{item.product.name}</p>
-                                  <p className="text-xs text-slate-500">{item.product.sku}</p>
+                                  <p className="text-on-surface font-medium leading-tight">{item.product.name}</p>
+                                  <p className="text-xs text-on-surface-variant">{item.product.sku}</p>
                                   {belowCost && (
-                                    <p className="text-xs text-amber-400 mt-0.5">
+                                    <p className="text-xs text-on-warning-container mt-0.5">
                                       Venta: {formatPYG(item.product.sale_price)}
                                     </p>
                                   )}
                                 </div>
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 text-center font-semibold text-emerald-400">
+                            <td className="px-3 py-2.5 text-center font-semibold text-tertiary">
                               +{item.quantity}
                             </td>
-                            <td className="px-3 py-2.5 text-right text-slate-300">
+                            <td className="px-3 py-2.5 text-right text-on-surface">
                               {item.unit_price > 0 ? formatPYG(item.unit_price) : '—'}
                             </td>
                             {totalDeliveryCost > 0 && (
-                              <td className="px-3 py-2.5 text-right text-amber-400 text-xs">
+                              <td className="px-3 py-2.5 text-right text-on-warning-container text-xs">
                                 +{formatPYG(Math.ceil(item.deliveryShare / item.quantity))}/u
-                                <p className="text-slate-600">{formatPYG(item.deliveryShare)} total</p>
+                                <p className="text-outline">{formatPYG(item.deliveryShare)} total</p>
                               </td>
                             )}
                             <td className={`px-3 py-2.5 text-right font-bold ${
                               totalDeliveryCost > 0
-                                ? belowCost ? 'text-amber-400' : 'text-emerald-400'
-                                : 'text-slate-200'
+                                ? belowCost ? 'text-on-warning-container' : 'text-tertiary'
+                                : 'text-on-surface'
                             }`}>
                               {totalDeliveryCost > 0
                                 ? formatPYG(item.realCostPerUnit)
@@ -533,7 +533,7 @@ export default function MovementsPage() {
                             </td>
                             <td className="px-3 py-2.5 text-center">
                               <button type="button" onClick={() => removeMultiItem(idx)}
-                                className="text-slate-600 hover:text-red-400 transition-colors" title="Eliminar">
+                                className="text-outline hover:text-error transition-colors" title="Eliminar">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -546,20 +546,20 @@ export default function MovementsPage() {
                   </table>
 
                   {/* Summary footer */}
-                  <div className="px-4 py-3 bg-slate-800/60 border-t border-slate-700 space-y-1.5 text-sm">
-                    <div className="flex justify-between text-slate-400">
+                  <div className="px-4 py-3 bg-surface-container-low border-t border-outline-variant space-y-1.5 text-sm">
+                    <div className="flex justify-between text-on-surface-variant">
                       <span>{multiItems.length} producto(s) — Subtotal compra</span>
-                      <span className="font-semibold text-slate-200">{formatPYG(multiSubtotal)}</span>
+                      <span className="font-semibold text-on-surface">{formatPYG(multiSubtotal)}</span>
                     </div>
                     {totalDeliveryCost > 0 && (
-                      <div className="flex justify-between text-amber-400">
-                        <span>🚛 Delivery proveedor</span>
+                      <div className="flex justify-between text-on-warning-container">
+                        <span className="inline-flex items-center gap-1"><span className="material-symbol text-[16px]" aria-hidden="true">local_shipping</span> Delivery proveedor</span>
                         <span className="font-semibold">+ {formatPYG(totalDeliveryCost)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between border-t border-slate-700 pt-1.5">
-                      <span className="font-bold text-slate-100">Total costo real</span>
-                      <span className="font-extrabold text-emerald-400">
+                    <div className="flex justify-between border-t border-outline-variant pt-1.5">
+                      <span className="font-bold text-on-surface">Total costo real</span>
+                      <span className="font-extrabold text-tertiary">
                         {formatPYG(multiSubtotal + totalDeliveryCost)}
                       </span>
                     </div>
@@ -568,18 +568,18 @@ export default function MovementsPage() {
 
                 {/* Live below-cost warning (before submit) */}
                 {multiBelowCostItems.length > 0 && (
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
-                    <p className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                      ⚠️ Precio de venta por debajo del costo real
+                  <div className="p-3 rounded-xl bg-warning-container border border-warning-outline space-y-1.5">
+                    <p className="text-xs font-bold text-on-warning-container uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="material-symbol text-[18px]" aria-hidden="true">warning</span> Precio de venta por debajo del costo real
                     </p>
                     {multiBelowCostItems.map((it, i) => (
-                      <p key={i} className="text-xs text-amber-300">
+                      <p key={i} className="text-xs text-on-warning-container">
                         <span className="font-semibold">{it.product.name}</span>: venta{' '}
                         <span className="font-bold">{formatPYG(it.product.sale_price)}</span> &lt; costo real{' '}
                         <span className="font-bold">{formatPYG(it.realCostPerUnit)}</span>/u
                       </p>
                     ))}
-                    <p className="text-xs text-amber-500">Actualizar el precio de venta para evitar pérdidas.</p>
+                    <p className="text-xs text-on-warning-container">Actualizar el precio de venta para evitar pérdidas.</p>
                   </div>
                 )}
               </div>
@@ -587,8 +587,8 @@ export default function MovementsPage() {
 
             {/* Invoice number — multi */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5 flex items-center gap-1.5">
-                🧾 Número de Factura *
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5 flex items-center gap-1.5">
+                <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">receipt_long</span> Número de factura *
               </label>
               <input
                 type="text"
@@ -602,7 +602,7 @@ export default function MovementsPage() {
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Notas (opcional)</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Notas (opcional)</label>
               <textarea className="form-input resize-none" rows={2}
                 placeholder="Ej. Compra a proveedor X"
                 value={form.notes} onChange={(e) => handleChange('notes', e.target.value)}
@@ -610,13 +610,13 @@ export default function MovementsPage() {
             </div>
 
             {/* Feedback */}
-            {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">{error}</div>}
-            {success && <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-400">{success}</div>}
+            {error && <div className="p-3 rounded-lg bg-error-container border border-error-outline text-sm text-error">{error}</div>}
+            {success && <div className="p-3 rounded-lg bg-tertiary-fixed border border-tertiary-fixed-dim text-sm text-tertiary">{success}</div>}
             {belowCostWarnings.length > 0 && <BelowCostWarning items={belowCostWarnings} />}
 
             <button type="button" onClick={handleSubmitMulti}
               disabled={!canSubmitMulti}
-              className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-500 text-white"
+              className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-tertiary-container hover:bg-tertiary-container text-white"
               id="btn-submit-multi">
               {loading ? 'Registrando…' : `↑ Registrar ${multiItems.length} entrada(s)`}
             </button>
@@ -629,32 +629,32 @@ export default function MovementsPage() {
           <form onSubmit={handleSubmitSingle} className="space-y-5">
             {/* Product */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Producto *</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Producto *</label>
               <ProductCombobox products={products} selected={selectedProduct}
                 onSelect={setSelectedProduct} id="movement-product" />
             </div>
 
             {/* Product info card */}
             {selectedProduct && (
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700 grid grid-cols-4 gap-3 text-sm">
+              <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant grid grid-cols-4 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-slate-500 mb-0.5">Stock actual</p>
-                  <p className="font-bold text-slate-200 text-lg">{selectedProduct.stock_current}</p>
-                  <p className="text-xs text-slate-500">{selectedProduct.unit}</p>
+                  <p className="text-xs text-on-surface-variant mb-0.5">Stock actual</p>
+                  <p className="font-bold text-on-surface text-lg">{selectedProduct.stock_current}</p>
+                  <p className="text-xs text-on-surface-variant">{selectedProduct.unit}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 mb-0.5">Stock mínimo</p>
-                  <p className="font-semibold text-slate-300">{selectedProduct.stock_minimum}</p>
+                  <p className="text-xs text-on-surface-variant mb-0.5">Stock mínimo</p>
+                  <p className="font-semibold text-on-surface">{selectedProduct.stock_minimum}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 mb-0.5">Precio venta</p>
-                  <p className="font-semibold text-slate-300 text-xs">
+                  <p className="text-xs text-on-surface-variant mb-0.5">Precio venta</p>
+                  <p className="font-semibold text-on-surface text-xs">
                     {selectedProduct.sale_price > 0 ? formatPYG(selectedProduct.sale_price) : '—'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 mb-0.5">Costo actual</p>
-                  <p className="font-semibold text-slate-300 text-xs">
+                  <p className="text-xs text-on-surface-variant mb-0.5">Costo actual</p>
+                  <p className="font-semibold text-on-surface text-xs">
                     {selectedProduct.cost_price > 0 ? formatPYG(selectedProduct.cost_price) : '—'}
                   </p>
                 </div>
@@ -664,25 +664,25 @@ export default function MovementsPage() {
             {/* Sale type — only for SALIDA */}
             {form.type === 'SALIDA' && (
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2">Destino de Venta *</label>
+                <label className="block text-xs font-medium text-on-surface-variant mb-2">Destino de Venta *</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button type="button" onClick={() => handleChange('sale_type', 'interna')} id="btn-sale-type-interna"
                     className={`p-4 rounded-xl border-2 text-sm transition-all duration-150 flex flex-col items-center justify-center gap-1 ${
                       form.sale_type === 'interna'
-                        ? 'border-violet-500 bg-violet-500/10 text-violet-300'
-                        : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                        ? 'border-brand bg-brand-soft text-brand-ink'
+                        : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline'
                     }`}>
-                    <span className="text-2xl">🏠</span>
+                    <span className="material-symbol text-[28px]" aria-hidden="true">storefront</span>
                     <span className="font-semibold">Interna</span>
                     <span className="text-xs opacity-70">Residentes</span>
                   </button>
                   <button type="button" onClick={() => handleChange('sale_type', 'externa')} id="btn-sale-type-externa"
                     className={`p-4 rounded-xl border-2 text-sm transition-all duration-150 flex flex-col items-center justify-center gap-1 ${
                       form.sale_type === 'externa'
-                        ? 'border-amber-500 bg-amber-500/10 text-amber-300'
-                        : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                        ? 'border-warning bg-warning-container text-on-warning-container'
+                        : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-outline'
                     }`}>
-                    <span className="text-2xl">🌐</span>
+                    <span className="material-symbol text-[28px]" aria-hidden="true">language</span>
                     <span className="font-semibold">Externa</span>
                     <span className="text-xs opacity-70">Ajenos / Colaboradores</span>
                   </button>
@@ -692,8 +692,8 @@ export default function MovementsPage() {
 
             {/* Invoice number */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5 flex items-center gap-1.5">
-                🧾 Número de Factura *
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5 flex items-center gap-1.5">
+                <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">receipt_long</span> Número de factura *
               </label>
               <input
                 type="text"
@@ -709,13 +709,13 @@ export default function MovementsPage() {
             {/* Quantity + Unit price */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Cantidad *</label>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Cantidad *</label>
                 <input type="number" min="1" className="form-input" placeholder="0"
                   value={form.quantity} onChange={(e) => handleChange('quantity', e.target.value)}
                   required id="movement-quantity" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
                   {form.type === 'ENTRADA' ? 'Precio de compra (₲)' : 'Precio Unitario (₲)'}
                 </label>
                 <input type="number" min="0" className="form-input" placeholder="0"
@@ -727,9 +727,9 @@ export default function MovementsPage() {
             {/* Delivery cost — only for ENTRADA */}
             {form.type === 'ENTRADA' && (
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5 flex items-center gap-1.5">
-                  🚛 Delivery del proveedor (₲)
-                  <span className="text-slate-600 font-normal">(opcional)</span>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1.5 flex items-center gap-1.5">
+                  <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">local_shipping</span> Delivery del proveedor (₲)
+                  <span className="text-outline font-normal">(opcional)</span>
                 </label>
                 <input type="number" min="0" className="form-input" placeholder="0"
                   value={singleDelivery} onChange={(e) => setSingleDelivery(e.target.value)}
@@ -739,32 +739,32 @@ export default function MovementsPage() {
 
             {/* Cost breakdown card — ENTRADA only, when we have enough data */}
             {form.type === 'ENTRADA' && singleQty > 0 && singleUnitPrice > 0 && (
-              <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700 space-y-2 text-sm">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Desglose de costo</p>
-                <div className="flex justify-between text-slate-400">
+              <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant space-y-2 text-sm">
+                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Desglose de costo</p>
+                <div className="flex justify-between text-on-surface-variant">
                   <span>Precio de compra</span>
                   <span>{formatPYG(singleUnitPrice)}/u</span>
                 </div>
                 {singleDeliveryCost > 0 && (
-                  <div className="flex justify-between text-amber-400">
-                    <span>🚛 Delivery / {singleQty} u</span>
+                  <div className="flex justify-between text-on-warning-container">
+                    <span className="inline-flex items-center gap-1"><span className="material-symbol text-[16px]" aria-hidden="true">local_shipping</span> Delivery / {singleQty} u</span>
                     <span>+ {formatPYG(Math.ceil(singleDeliveryCost / singleQty))}/u</span>
                   </div>
                 )}
-                <div className={`flex justify-between pt-2 border-t border-slate-700 font-bold ${singleBelowCost ? 'text-amber-400' : 'text-emerald-400'}`}>
+                <div className={`flex justify-between pt-2 border-t border-outline-variant font-bold ${singleBelowCost ? 'text-on-warning-container' : 'text-tertiary'}`}>
                   <span>Costo real por unidad</span>
                   <span>{formatPYG(singleRealCostPerUnit)}</span>
                 </div>
                 {selectedProduct?.sale_price > 0 && (
-                  <div className={`flex justify-between text-xs ${singleBelowCost ? 'text-amber-400' : 'text-slate-500'}`}>
+                  <div className={`flex justify-between text-xs ${singleBelowCost ? 'text-on-warning-container' : 'text-on-surface-variant'}`}>
                     <span>Precio de venta actual</span>
                     <span className="font-semibold">{formatPYG(selectedProduct.sale_price)}</span>
                   </div>
                 )}
                 {selectedProduct && singleUnitPrice > 0 && (
-                  <div className="flex justify-between text-xs text-slate-500">
+                  <div className="flex justify-between text-xs text-on-surface-variant">
                     <span>Total compra ({singleQty} u)</span>
-                    <span className="font-semibold text-slate-300">{formatPYG(singleQty * singleUnitPrice + singleDeliveryCost)}</span>
+                    <span className="font-semibold text-on-surface">{formatPYG(singleQty * singleUnitPrice + singleDeliveryCost)}</span>
                   </div>
                 )}
               </div>
@@ -772,19 +772,19 @@ export default function MovementsPage() {
 
             {/* Below-cost warning — live */}
             {singleBelowCost && (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-1">
-                <p className="font-bold text-amber-400 flex items-center gap-1.5">⚠️ Precio de venta por debajo del costo real</p>
+              <div className="p-3 rounded-xl bg-warning-container border border-warning-outline text-xs text-on-warning-container space-y-1">
+                <p className="font-bold text-on-warning-container flex items-center gap-1.5"><span className="material-symbol text-[18px]" aria-hidden="true">warning</span> Precio de venta por debajo del costo real</p>
                 <p>
                   Venta actual: <strong>{formatPYG(selectedProduct.sale_price)}</strong> &lt; Costo real:{' '}
                   <strong>{formatPYG(singleRealCostPerUnit)}</strong>/u
                 </p>
-                <p className="text-amber-500">Actualizar el precio de venta para evitar pérdidas.</p>
+                <p className="text-on-warning-container">Actualizar el precio de venta para evitar pérdidas.</p>
               </div>
             )}
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Notas (opcional)</label>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Notas (opcional)</label>
               <textarea className="form-input resize-none" rows={3}
                 placeholder="Ej. Compra a proveedor X"
                 value={form.notes} onChange={(e) => handleChange('notes', e.target.value)}
@@ -792,15 +792,15 @@ export default function MovementsPage() {
             </div>
 
             {/* Feedback */}
-            {error   && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">{error}</div>}
-            {success && <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-400">✓ {success}</div>}
+            {error   && <div className="p-3 rounded-lg bg-error-container border border-error-outline text-sm text-error">{error}</div>}
+            {success && <div className="p-3 rounded-lg bg-tertiary-fixed border border-tertiary-fixed-dim text-sm text-tertiary"><span className="material-symbol text-[18px] align-[-4px] mr-1" aria-hidden="true">check_circle</span>{success}</div>}
             {belowCostWarnings.length > 0 && <BelowCostWarning items={belowCostWarnings} />}
 
             <button type="submit" disabled={!canSubmitSingle}
               className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                 form.type === 'ENTRADA'
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                  : 'bg-red-600 hover:bg-red-500 text-white'
+                  ? 'bg-tertiary-container hover:bg-tertiary-container text-white'
+                  : 'bg-error hover:bg-error text-white'
               }`}
               id="btn-submit-movement">
               {loading ? 'Registrando…' : `Registrar ${form.type}`}

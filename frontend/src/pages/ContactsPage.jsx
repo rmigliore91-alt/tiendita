@@ -11,8 +11,8 @@ const EMPTY_FORM = {
 function Field({ label, value, onChange, id, type = 'text', required = false, placeholder = '' }) {
   return (
     <div>
-      <label className="block text-xs text-slate-500 mb-1.5">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      <label className="block text-xs text-on-surface-variant mb-1.5">
+        {label}{required && <span className="text-error ml-0.5">*</span>}
       </label>
       <input
         id={id}
@@ -56,13 +56,13 @@ function ContactModal({ contact, onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-          <h3 className="font-bold text-slate-100">
-            {contact ? '✏️ Editar contacto' : '➕ Nuevo contacto'}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl w-full max-w-lg shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-container-high">
+          <h3 className="font-bold text-on-surface">
+            {contact ? 'Editar contacto' : 'Nuevo contacto'}
           </h3>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors">
+          <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -80,7 +80,7 @@ function ContactModal({ contact, onClose, onSaved }) {
             <Field label="Teléfono 2" value={form.phone2} onChange={set('phone2')} id="cf-phone2" placeholder="021 123 456" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Dirección</label>
+            <label className="block text-xs text-on-surface-variant mb-1.5">Dirección</label>
             <textarea
               className="form-input resize-none"
               rows={2}
@@ -91,7 +91,7 @@ function ContactModal({ contact, onClose, onSaved }) {
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Notas internas</label>
+            <label className="block text-xs text-on-surface-variant mb-1.5">Notas internas</label>
             <textarea
               className="form-input resize-none"
               rows={2}
@@ -103,7 +103,7 @@ function ContactModal({ contact, onClose, onSaved }) {
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-sm text-error bg-error-container border border-error-outline rounded-lg px-3 py-2">{error}</p>
           )}
 
           <div className="flex gap-3 pt-2">
@@ -122,40 +122,40 @@ function ContactModal({ contact, onClose, onSaved }) {
 function BudgetRow({ budget }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-slate-800 rounded-xl overflow-hidden">
+    <div className="border border-surface-container-high rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-800/40 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-container-low transition-colors"
       >
         <div className="flex items-center gap-3 text-sm">
-          <span className="text-slate-500">{formatDateTime(budget.created_at)}</span>
+          <span className="text-on-surface-variant">{formatDateTime(budget.created_at)}</span>
           {budget.with_delivery && (
-            <span className="badge badge-blue">🚚 Delivery</span>
+            <span className="badge-blue"><span className="material-symbol text-[14px]" aria-hidden="true">local_shipping</span> Delivery</span>
           )}
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-bold text-brand-400 text-sm">{formatPYG(budget.total)}</span>
-          <svg className={`w-4 h-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <span className="font-bold text-primary-container text-sm">{formatPYG(budget.total)}</span>
+          <svg className={`w-4 h-4 text-on-surface-variant transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </button>
 
       {open && (
-        <div className="border-t border-slate-800 px-4 py-3 space-y-2 bg-slate-900/50">
+        <div className="border-t border-surface-container-high px-4 py-3 space-y-2 bg-surface-container-low">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-slate-500 uppercase tracking-wider">
+              <tr className="text-on-surface-variant uppercase tracking-wider">
                 <th className="text-left pb-1.5 font-semibold">Producto</th>
                 <th className="text-center pb-1.5 font-semibold">Cant.</th>
                 <th className="text-right pb-1.5 font-semibold">P. Unit.</th>
                 <th className="text-right pb-1.5 font-semibold">Subtotal</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-surface-container-high">
               {budget.items?.map((it, i) => (
-                <tr key={i} className="text-slate-300">
+                <tr key={i} className="text-on-surface">
                   <td className="py-1.5">{it.product_name}</td>
                   <td className="py-1.5 text-center">{it.quantity}</td>
                   <td className="py-1.5 text-right">{formatPYG(it.unit_price)}</td>
@@ -164,24 +164,24 @@ function BudgetRow({ budget }) {
               ))}
             </tbody>
           </table>
-          <div className="flex flex-col items-end gap-1 pt-2 border-t border-slate-800 text-sm">
-            <div className="flex justify-between w-48 text-slate-400">
+          <div className="flex flex-col items-end gap-1 pt-2 border-t border-surface-container-high text-sm">
+            <div className="flex justify-between w-48 text-on-surface-variant">
               <span>Subtotal</span>
               <span>{formatPYG(budget.subtotal)}</span>
             </div>
             {budget.with_delivery && (
-              <div className="flex justify-between w-48 text-cyan-400">
+              <div className="flex justify-between w-48 text-on-info-container">
                 <span>Delivery ({budget.distance_km} km)</span>
                 <span>{formatPYG(budget.delivery_cost)}</span>
               </div>
             )}
-            <div className="flex justify-between w-48 font-bold text-slate-100 border-t border-slate-700 pt-1">
+            <div className="flex justify-between w-48 font-bold text-on-surface border-t border-outline-variant pt-1">
               <span>Total</span>
               <span>{formatPYG(budget.total)}</span>
             </div>
           </div>
           {budget.notes && (
-            <p className="text-xs text-slate-500 italic">{budget.notes}</p>
+            <p className="text-xs text-on-surface-variant italic">{budget.notes}</p>
           )}
         </div>
       )}
@@ -213,21 +213,21 @@ function ContactDrawer({ contact, onClose, onEdit, onDelete }) {
   useEffect(() => { loadHistory(1); }, [loadHistory]);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/70 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex justify-end bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-lg bg-slate-900 border-l border-slate-800 h-full overflow-y-auto flex flex-col shadow-2xl"
+        className="w-full max-w-lg bg-surface-container-lowest border-l border-surface-container-high h-full overflow-y-auto flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-800 flex items-start justify-between sticky top-0 bg-slate-900 z-10">
+        <div className="px-6 py-5 border-b border-surface-container-high flex items-start justify-between sticky top-0 bg-surface-container-lowest z-10">
           <div>
-            <p className="text-xl font-bold text-slate-100">{contact.name}</p>
-            {contact.ruc && <p className="text-xs text-slate-500 mt-0.5">RUC: {contact.ruc}</p>}
+            <p className="text-xl font-bold text-on-surface">{contact.name}</p>
+            {contact.ruc && <p className="text-xs text-on-surface-variant mt-0.5">RUC: {contact.ruc}</p>}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => onEdit(contact)} className="btn-secondary px-3 py-1.5 text-xs">✏️ Editar</button>
-            <button onClick={() => onDelete(contact)} className="btn-danger px-3 py-1.5 text-xs">🗑</button>
-            <button onClick={onClose} className="text-slate-500 hover:text-slate-300 ml-1">
+            <button onClick={() => onEdit(contact)} className="btn-secondary px-3 py-1.5 text-xs"><span className="material-symbol text-[16px]" aria-hidden="true">edit</span> Editar</button>
+            <button onClick={() => onDelete(contact)} className="btn-danger px-3 py-1.5 text-xs" aria-label="Eliminar contacto"><span className="material-symbol text-[16px]" aria-hidden="true">delete</span></button>
+            <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface ml-1">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -236,17 +236,17 @@ function ContactDrawer({ contact, onClose, onEdit, onDelete }) {
         </div>
 
         {/* Info */}
-        <div className="px-6 py-4 border-b border-slate-800 grid grid-cols-2 gap-3 text-sm">
+        <div className="px-6 py-4 border-b border-surface-container-high grid grid-cols-2 gap-3 text-sm">
           {[
-            { icon: '📧', label: 'Email',      val: contact.email   },
-            { icon: '📞', label: 'Teléfono 1', val: contact.phone1  },
-            { icon: '📱', label: 'Teléfono 2', val: contact.phone2  },
-            { icon: '📍', label: 'Dirección',  val: contact.address, full: true },
-            { icon: '📝', label: 'Notas',      val: contact.notes,  full: true },
+            { icon: 'mail', label: 'Email',      val: contact.email   },
+            { icon: 'call', label: 'Teléfono 1', val: contact.phone1  },
+            { icon: 'smartphone', label: 'Teléfono 2', val: contact.phone2  },
+            { icon: 'location_on', label: 'Dirección',  val: contact.address, full: true },
+            { icon: 'notes', label: 'Notas',      val: contact.notes,  full: true },
           ].filter((f) => f.val).map((f) => (
             <div key={f.label} className={f.full ? 'col-span-2' : ''}>
-              <p className="text-xs text-slate-500 mb-0.5">{f.icon} {f.label}</p>
-              <p className="text-slate-300">{f.val}</p>
+              <p className="text-xs text-on-surface-variant mb-0.5 flex items-center gap-1"><span className="material-symbol text-[14px]" aria-hidden="true">{f.icon}</span>{f.label}</p>
+              <p className="text-on-surface">{f.val}</p>
             </div>
           ))}
         </div>
@@ -254,18 +254,18 @@ function ContactDrawer({ contact, onClose, onEdit, onDelete }) {
         {/* History */}
         <div className="px-6 py-4 flex-1">
           <div className="flex items-center justify-between mb-3">
-            <p className="font-semibold text-slate-200 text-sm">
-              📋 Historial de presupuestos
+            <p className="font-semibold text-on-surface text-sm">
+              <span className="material-symbol text-[18px] align-[-4px] mr-1" aria-hidden="true">history</span>Historial de presupuestos
             </p>
-            <span className="text-xs text-slate-500">{hTotal} en total</span>
+            <span className="text-xs text-on-surface-variant">{hTotal} en total</span>
           </div>
 
           {hLoading ? (
             <div className="flex justify-center py-10">
-              <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
             </div>
           ) : history.length === 0 ? (
-            <div className="text-center py-10 text-slate-600 text-sm">
+            <div className="text-center py-10 text-outline text-sm">
               Sin presupuestos registrados aún
             </div>
           ) : (
@@ -279,7 +279,7 @@ function ContactDrawer({ contact, onClose, onEdit, onDelete }) {
                     disabled={hPage <= 1}
                     className="btn-secondary px-3 py-1.5 text-xs"
                   >← Ant</button>
-                  <span className="text-xs text-slate-500">{hPage} / {hPages}</span>
+                  <span className="text-xs text-on-surface-variant">{hPage} / {hPages}</span>
                   <button
                     onClick={() => loadHistory(hPage + 1)}
                     disabled={hPage >= hPages}
@@ -354,7 +354,7 @@ export default function ContactsPage() {
     <div className="max-w-4xl mx-auto space-y-5">
       {/* Page header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-100">👥 Contactos</h2>
+        <h2 className="page-title">Contactos</h2>
         <button
           onClick={() => setModal('create')}
           className="btn-primary"
@@ -370,7 +370,7 @@ export default function ContactsPage() {
       {/* Search bar */}
       <div className="card p-4">
         <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -388,11 +388,11 @@ export default function ContactsPage() {
       <div className="card overflow-hidden">
         {loading ? (
           <div className="flex justify-center items-center py-16">
-            <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
           </div>
         ) : contacts.length === 0 ? (
-          <div className="text-center py-16 text-slate-500">
-            <div className="text-4xl mb-3">👤</div>
+          <div className="text-center py-16 text-on-surface-variant">
+            <span className="material-symbol text-[40px] text-outline block mb-3" aria-hidden="true">person_search</span>
             <p>{search ? 'Sin resultados para la búsqueda' : 'No hay contactos aún'}</p>
             {!search && (
               <button onClick={() => setModal('create')} className="btn-primary mt-4 mx-auto">
@@ -420,15 +420,15 @@ export default function ContactsPage() {
                     className="cursor-pointer"
                     onClick={() => setDrawer(c)}
                   >
-                    <td className="font-medium text-slate-200">{c.name}</td>
-                    <td className="text-slate-400">{c.ruc || '—'}</td>
-                    <td className="text-slate-400">{c.phone1 || '—'}</td>
-                    <td className="text-slate-400">{c.email || '—'}</td>
-                    <td className="text-slate-400 max-w-[160px] truncate">{c.address || '—'}</td>
+                    <td className="font-medium text-on-surface">{c.name}</td>
+                    <td className="text-on-surface-variant">{c.ruc || '—'}</td>
+                    <td className="text-on-surface-variant">{c.phone1 || '—'}</td>
+                    <td className="text-on-surface-variant">{c.email || '—'}</td>
+                    <td className="text-on-surface-variant max-w-[160px] truncate">{c.address || '—'}</td>
                     <td className="text-center">
                       <button
                         onClick={(e) => { e.stopPropagation(); setModal(c); }}
-                        className="text-slate-500 hover:text-brand-400 transition-colors p-1"
+                        className="text-on-surface-variant hover:text-primary-container transition-colors p-1"
                         title="Editar"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -444,7 +444,7 @@ export default function ContactsPage() {
 
             {/* Pagination */}
             {pages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800 text-sm text-slate-500">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-surface-container-high text-sm text-on-surface-variant">
                 <span>{total} contactos</span>
                 <div className="flex gap-2">
                   <button onClick={() => { setPage(page - 1); load(search, page - 1); }} disabled={page <= 1} className="btn-secondary px-3 py-1.5 text-xs">← Ant</button>
@@ -478,11 +478,11 @@ export default function ContactsPage() {
 
       {/* Delete confirmation */}
       {delConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
-            <p className="font-bold text-slate-100">¿Eliminar contacto?</p>
-            <p className="text-sm text-slate-400">
-              Se eliminará <span className="text-slate-200 font-medium">{delConfirm.name}</span>.
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <p className="font-bold text-on-surface">¿Eliminar contacto?</p>
+            <p className="text-sm text-on-surface-variant">
+              Se eliminará <span className="text-on-surface font-medium">{delConfirm.name}</span>.
               Si tiene presupuestos registrados, se desactivará en lugar de eliminarse.
             </p>
             <div className="flex gap-3">

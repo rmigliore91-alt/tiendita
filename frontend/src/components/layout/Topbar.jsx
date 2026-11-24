@@ -1,41 +1,46 @@
 import { useAuth } from '../../context/AuthContext';
 
-export default function Topbar({ title }) {
-  const { user, logout, isAdmin } = useAuth();
+export default function Topbar({ title, onMenu }) {
+  const { user, logout, isAdmin, isMarketing } = useAuth();
+
+  const initials = user?.name
+    ? user.name.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()
+    : '?';
+  const rol = isAdmin ? 'Administrador' : isMarketing ? 'Marketing' : 'Operador';
 
   return (
-    <header className="h-14 bg-slate-900/80 backdrop-blur border-b border-slate-800 flex items-center justify-between px-6 flex-shrink-0">
-      <h1 className="text-base font-semibold text-slate-200">{title}</h1>
+    <header className="sticky top-0 z-30 h-16 px-4 lg:px-8 flex items-center justify-between gap-4 bg-surface/85 backdrop-blur-xl border-b border-surface-container-high flex-shrink-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          onClick={onMenu}
+          className="lg:hidden w-11 h-11 -ml-2 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors"
+          aria-label="Abrir menú"
+        >
+          <span className="material-symbol text-[22px]">menu</span>
+        </button>
+        <img src="/logo.png" alt="" width={32} height={32} className="lg:hidden h-8 w-8 rounded-full object-contain" />
+        <p className="text-label-md text-outline uppercase tracking-wider truncate hidden sm:block">{title}</p>
+      </div>
 
       <div className="flex items-center gap-3">
-        {/* User badge */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-brand-600/30 border border-brand-500/40 flex items-center justify-center">
-            <span className="text-xs font-bold text-brand-400">
-              {user?.name?.charAt(0).toUpperCase()}
-            </span>
-          </div>
+        <div className="flex items-center gap-2.5">
           <div className="hidden sm:block text-right">
-            <p className="text-sm font-medium text-slate-200 leading-none">{user?.name}</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {isAdmin ? 'Administrador' : 'Operador'}
-            </p>
+            <p className="text-label-lg text-on-surface leading-tight">{user?.name}</p>
+            <p className="text-label-sm text-on-surface-variant leading-tight mt-0.5">{rol}</p>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-inverse-surface text-brand flex items-center justify-center text-label-md font-bold ring-2 ring-primary/20">
+            {initials}
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-slate-800" />
+        <div className="w-px h-6 bg-surface-container-high" />
 
-        {/* Logout */}
         <button
           onClick={logout}
-          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-slate-800"
+          className="flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-label-md text-on-surface-variant hover:text-error hover:bg-error-container transition-colors"
           title="Cerrar sesión"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
+          <span className="material-symbol text-[18px]">logout</span>
           <span className="hidden sm:inline">Salir</span>
         </button>
       </div>
