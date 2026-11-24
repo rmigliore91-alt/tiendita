@@ -1,0 +1,23 @@
+# Blueprint de Render – La Tiendita / Taita
+# La base de datos vive en Neon (gratis, sin vencimiento); acá solo va la app.
+services:
+  - type: web
+    name: tiendita-taita
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install --prefix backend && npm run build
+    startCommand: NODE_ENV=production node backend/setup.js && node backend/src/index.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATABASE_URL
+        sync: false   # pegar la connection string de Neon en el panel de Render
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false
