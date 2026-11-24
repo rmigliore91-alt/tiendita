@@ -46,6 +46,7 @@ const BASE_SELECT = `
     m.id, m.type, m.quantity, m.unit_price, m.total_price,
     m.sale_type, m.notes, m.created_at, m.invoice_number,
     m.supplier_delivery_cost, m.delivery_cost_share, m.cost_price_at_entry,
+    m.affects_stock,
     p.id AS product_id, p.name AS product_name, p.sku,
     p.sale_price, p.cost_price,
     c.id AS category_id, c.name AS category_name,
@@ -95,21 +96,36 @@ async function listMovements(req, res, next) {
   }
 }
 
+/** Validates an optional 'YYYY-MM-DD' movement date. Returns { date } or { error }. */
+function parseMovementDate(value) {
+  if (value === undefined || value === null || value === '') return { date: null };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return { error: 'Fecha del movimiento inválida' };
+  const d = new Date(`${value}T00:00:00Z`);
+  if (isNaN(d) || d.toISOString().slice(0, 10) !== value) return { error: 'Fecha del movimiento inválida' };
+  return { date: value };
+}
+
 /**
  * POST /api/movements
- * Body: { product_id, type, quantity, unit_price, notes, invoice_number,
- *         sale_type?, supplier_delivery_cost?, delivery_cost_share? }
+ * Body: { product_id, type, quantity, unit_price, notes, invoice_number?,
+ *         sale_type?, supplier_delivery_cost?, delivery_cost_share?,
+ *         movement_date?, affects_stock? }
  *
- * invoice_number is required for all movements.
+ * invoice_number is optional (old movements may not have one).
+ * movement_date (YYYY-MM-DD, optional, not in the future) lets users load
+ * past movements; it is stored as created_at at 12:00 Asunción time.
+ * affects_stock = false records the movement in history only (for old
+ * movements already reflected in a physical inventory count).
  *
  * For ENTRADA movements:
  *   - supplier_delivery_cost: total freight paid to supplier for the whole purchase batch
  *   - delivery_cost_share: the proportional freight amount assigned to THIS specific item
- *                          (calculated by the frontend based on subtotal ratios)
  *   - cost_price_at_entry = unit_price + ceil(delivery_cost_share / quantity)
- *   - products.cost_price is updated to cost_price_at_entry automatically
+ *   - products.cost_price is updated to cost_price_at_entry unless a more
+ *     recent ENTRADA already set it (back-dated entries don't overwrite it).
  *
- * Updates product stock_current and cost_price atomically in a transaction.
+ * Updates product stock_current atomically in a transaction and returns
+ * stock_before / stock_after so the UI can show the change.
  */
 async function createMovement(req, res, next) {
   const client = await pool.connect();
@@ -118,7 +134,9 @@ async function createMovement(req, res, next) {
       product_id, type, quantity, unit_price, notes, sale_type,
       invoice_number,
       supplier_delivery_cost, delivery_cost_share,
+      movement_date,
     } = req.body;
+    const affectsStock = req.body.affects_stock !== false;
 
     if (!product_id || !type || !quantity) {
       return res.status(400).json({ error: 'Producto, tipo y cantidad son requeridos' });
@@ -130,16 +148,25 @@ async function createMovement(req, res, next) {
     if (type === 'SALIDA' && !['interna', 'externa'].includes(sale_type)) {
       return res.status(400).json({ error: 'Para una SALIDA debe indicar si es venta interna o externa' });
     }
-    // invoice_number is required for all movements
-    if (!invoice_number || !invoice_number.trim()) {
-      return res.status(400).json({ error: 'El número de factura es requerido' });
-    }
     const qty = parseInt(quantity);
     if (isNaN(qty) || qty <= 0) {
       return res.status(400).json({ error: 'La cantidad debe ser un número positivo' });
     }
+    const { date: movementDate, error: dateError } = parseMovementDate(movement_date);
+    if (dateError) return res.status(400).json({ error: dateError });
 
     await client.query('BEGIN');
+
+    if (movementDate) {
+      const { rows: [{ future }] } = await client.query(
+        `SELECT $1::date > (NOW() AT TIME ZONE 'America/Asuncion')::date AS future`,
+        [movementDate]
+      );
+      if (future) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'La fecha del movimiento no puede ser futura' });
+      }
+    }
 
     // Lock the product row
     const { rows: [product] } = await client.query(
@@ -155,8 +182,8 @@ async function createMovement(req, res, next) {
       return res.status(400).json({ error: 'El producto está inactivo' });
     }
 
-    // Validate stock for SALIDA
-    if (type === 'SALIDA' && product.stock_current < qty) {
+    // Validate stock for SALIDA (only when it actually changes stock)
+    if (affectsStock && type === 'SALIDA' && product.stock_current < qty) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         error: `Stock insuficiente. Stock actual: ${product.stock_current}, solicitado: ${qty}`,
@@ -169,37 +196,55 @@ async function createMovement(req, res, next) {
     const totalPrice           = qty * unitPriceInt;
     const delta                = type === 'ENTRADA' ? qty : -qty;
     const saleTypeVal          = type === 'SALIDA' ? sale_type : null;
+    const invoiceVal           = typeof invoice_number === 'string' && invoice_number.trim()
+      ? invoice_number.trim()
+      : null;
 
     // Effective cost per unit = purchase price + delivery share spread over units
     const deliveryPerUnit   = qty > 0 ? Math.ceil(deliveryCostShare / qty) : 0;
     const costPriceAtEntry  = unitPriceInt + deliveryPerUnit;
 
-    // Insert movement
+    // Insert movement (created_at = chosen date at noon Asunción, or now)
     const { rows: [movement] } = await client.query(
       `INSERT INTO movements
          (product_id, user_id, type, quantity, unit_price, total_price, sale_type, notes,
-          invoice_number, supplier_delivery_cost, delivery_cost_share, cost_price_at_entry)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          invoice_number, supplier_delivery_cost, delivery_cost_share, cost_price_at_entry,
+          affects_stock, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+               CASE WHEN $14::date IS NULL THEN NOW()
+                    ELSE ($14::date + TIME '12:00') AT TIME ZONE 'America/Asuncion' END)
        RETURNING *`,
       [
         product_id, req.user.id, type, qty, unitPriceInt, totalPrice, saleTypeVal,
         notes?.trim() || null,
-        invoice_number.trim(),
+        invoiceVal,
         supplierDeliveryCost, deliveryCostShare, costPriceAtEntry,
+        affectsStock, movementDate,
       ]
     );
 
     // Update stock
-    await client.query(
-      'UPDATE products SET stock_current = stock_current + $1 WHERE id = $2',
-      [delta, product_id]
-    );
+    let stockAfter = product.stock_current;
+    if (affectsStock) {
+      const { rows: [upd] } = await client.query(
+        'UPDATE products SET stock_current = stock_current + $1 WHERE id = $2 RETURNING stock_current',
+        [delta, product_id]
+      );
+      stockAfter = upd.stock_current;
+    }
 
-    // For ENTRADA: update cost_price to reflect real entry cost (including delivery share)
+    // For ENTRADA: update cost_price to reflect real entry cost (including delivery share),
+    // unless a more recent entry already defines the current cost.
     if (type === 'ENTRADA' && costPriceAtEntry > 0) {
       await client.query(
-        'UPDATE products SET cost_price = $1 WHERE id = $2',
-        [costPriceAtEntry, product_id]
+        `UPDATE products SET cost_price = $1
+         WHERE id = $2
+           AND NOT EXISTS (
+             SELECT 1 FROM movements
+             WHERE product_id = $2 AND type = 'ENTRADA' AND cost_price_at_entry > 0
+               AND id <> $3 AND created_at > $4
+           )`,
+        [costPriceAtEntry, product_id, movement.id, movement.created_at]
       );
     }
 
@@ -211,6 +256,8 @@ async function createMovement(req, res, next) {
       sale_price:       parseInt(product.sale_price),
       cost_price_at_entry: costPriceAtEntry,
       below_cost_warning: costPriceAtEntry > 0 && parseInt(product.sale_price) < costPriceAtEntry,
+      stock_before: product.stock_current,
+      stock_after:  stockAfter,
     });
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
@@ -252,6 +299,7 @@ async function exportCSV(req, res, next) {
       { label: 'Delivery Proveedor (PYG)', value: 'supplier_delivery_cost' },
       { label: 'Delivery Asignado (PYG)',  value: 'delivery_cost_share' },
       { label: 'Costo Real/u (PYG)',    value: 'cost_price_at_entry' },
+      { label: 'Afecta stock',          value: (row) => row.affects_stock === false ? 'No (solo historial)' : 'Sí' },
       { label: 'Usuario',               value: 'user_name' },
       { label: 'Notas',                 value: 'notes' },
     ];

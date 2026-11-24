@@ -1,6 +1,29 @@
 const pool = require('../config/db');
 
 /**
+ * Normalizes product details into [{ label, value }] (max 20, trimmed, no empties).
+ * Returns undefined when the field was not sent, so updates can keep the old value.
+ */
+function normalizeDetails(details) {
+  if (details === undefined) return undefined;
+  if (!Array.isArray(details)) return [];
+  return details
+    .map((d) => ({
+      label: String(d?.label ?? '').trim().slice(0, 60),
+      value: String(d?.value ?? '').trim().slice(0, 200),
+    }))
+    .filter((d) => d.label && d.value)
+    .slice(0, 20);
+}
+
+/** parseInt that returns null for empty / invalid input. */
+function intOrNull(v) {
+  if (v === undefined || v === null || v === '') return null;
+  const n = parseInt(v);
+  return isNaN(n) ? null : n;
+}
+
+/**
  * GET /api/products
  * Query: ?category_id=&category=&active=&low_stock=&expiring_soon=&search=&page=&limit=&sort_by=&order=
  * Without page/limit → returns flat array (backward-compatible for dropdowns).
@@ -31,7 +54,8 @@ async function listProducts(req, res, next) {
     }
     if (search) {
       params.push(`%${search}%`);
-      conditions.push(`(p.name ILIKE $${params.length} OR p.sku ILIKE $${params.length})`);
+      conditions.push(`(p.name ILIKE $${params.length} OR p.sku ILIKE $${params.length}
+                        OR p.description ILIKE $${params.length} OR p.details::text ILIKE $${params.length})`);
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -59,6 +83,7 @@ async function listProducts(req, res, next) {
              p.stock_current, p.stock_minimum,
              p.cost_price, p.sale_price,
              p.active, p.created_at, p.expiry_date,
+             p.description, p.details,
              c.id AS category_id, c.name AS category_name
       FROM products p
       JOIN categories c ON c.id = p.category_id
@@ -103,6 +128,7 @@ async function getProduct(req, res, next) {
               p.stock_current, p.stock_minimum,
               p.cost_price, p.sale_price,
               p.active, p.created_at, p.expiry_date,
+              p.description, p.details,
               c.id AS category_id, c.name AS category_name
        FROM products p
        JOIN categories c ON c.id = p.category_id
@@ -121,14 +147,18 @@ async function getProduct(req, res, next) {
  */
 async function createProduct(req, res, next) {
   try {
-    const { category_id, name, sku, unit, stock_current, stock_minimum, cost_price, sale_price, expiry_date } = req.body;
+    const {
+      category_id, name, sku, unit, stock_current, stock_minimum, cost_price, sale_price, expiry_date,
+      description,
+    } = req.body;
     if (!category_id || !name || !sku || !unit) {
       return res.status(400).json({ error: 'Categoría, nombre, SKU y unidad son requeridos' });
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO products (category_id, name, sku, unit, stock_current, stock_minimum, cost_price, sale_price, expiry_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO products (category_id, name, sku, unit, stock_current, stock_minimum, cost_price, sale_price, expiry_date,
+                             description, details)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         category_id,
@@ -140,6 +170,8 @@ async function createProduct(req, res, next) {
         parseInt(cost_price) || 0,
         parseInt(sale_price) || 0,
         expiry_date || null,
+        description?.trim() || null,
+        JSON.stringify(normalizeDetails(req.body.details) || []),
       ]
     );
     res.status(201).json(rows[0]);
@@ -150,14 +182,21 @@ async function createProduct(req, res, next) {
 
 /**
  * PUT /api/products/:id
+ * Stock is never edited here: it only changes through movements.
+ * Fields not sent keep their current value. expiry_date '' / null clears it.
  */
 async function updateProduct(req, res, next) {
   try {
     const { id } = req.params;
-    const { category_id, name, sku, unit, stock_minimum, cost_price, sale_price, expiry_date } = req.body;
+    const { category_id, name, sku, unit, stock_minimum, cost_price, sale_price, expiry_date, description } = req.body;
 
-    // expiry_date can be explicitly set to null to clear it
-    const expiryVal = expiry_date === '' ? null : (expiry_date || undefined);
+    const details = normalizeDetails(req.body.details);
+    const minimum = intOrNull(stock_minimum);
+    const cost    = intOrNull(cost_price);
+    const sale    = intOrNull(sale_price);
+    if ([minimum, cost, sale].some((n) => n !== null && n < 0)) {
+      return res.status(400).json({ error: 'Stock mínimo y precios no pueden ser negativos' });
+    }
 
     const { rows } = await pool.query(
       `UPDATE products
@@ -168,18 +207,24 @@ async function updateProduct(req, res, next) {
            stock_minimum = COALESCE($5, stock_minimum),
            cost_price    = COALESCE($6, cost_price),
            sale_price    = COALESCE($7, sale_price),
-           expiry_date   = $8
-       WHERE id = $9
+           expiry_date   = CASE WHEN $8::boolean THEN $9::date ELSE expiry_date END,
+           description   = CASE WHEN $10::boolean THEN $11 ELSE description END,
+           details       = COALESCE($12::jsonb, details)
+       WHERE id = $13
        RETURNING *`,
       [
         category_id || null,
         name?.trim() || null,
         sku?.trim().toUpperCase() || null,
         unit?.trim() || null,
-        stock_minimum !== undefined ? parseInt(stock_minimum) : null,
-        cost_price !== undefined ? parseInt(cost_price) : null,
-        sale_price !== undefined ? parseInt(sale_price) : null,
-        expiryVal !== undefined ? expiryVal : null,
+        minimum,
+        cost,
+        sale,
+        expiry_date !== undefined,
+        expiry_date || null,
+        description !== undefined,
+        description?.trim() || null,
+        details !== undefined ? JSON.stringify(details) : null,
         id,
       ]
     );

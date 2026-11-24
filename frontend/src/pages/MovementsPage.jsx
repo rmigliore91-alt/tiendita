@@ -1,6 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import client from '../api/client';
 import { formatPYG } from '../utils/formatters';
+import ProductDetails, { detailsText } from '../components/ui/ProductDetails';
+import useRefreshOnFocus from '../hooks/useRefreshOnFocus';
+
+/** Today's date (local time) as YYYY-MM-DD, for <input type="date"> */
+function todayISO() {
+  return new Date().toLocaleDateString('en-CA');
+}
 
 /* ─────────────────────────────────────────────────────────────
    ProductCombobox — live search instead of a plain <select>
@@ -23,7 +30,8 @@ function ProductCombobox({ products, selected, onSelect, placeholder = 'Buscar p
   const filtered = query.trim()
     ? products.filter((p) =>
         p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.sku.toLowerCase().includes(query.toLowerCase())
+        p.sku.toLowerCase().includes(query.toLowerCase()) ||
+        detailsText(p.details).toLowerCase().includes(query.toLowerCase())
       ).slice(0, 20)
     : products.slice(0, 20);
 
@@ -60,6 +68,7 @@ function ProductCombobox({ products, selected, onSelect, placeholder = 'Buscar p
               className="w-full text-left px-4 py-2.5 hover:bg-surface-container transition-colors">
               <p className="text-sm font-medium text-on-surface">{p.name}</p>
               <p className="text-xs text-on-surface-variant">{p.sku} · Stock: {p.stock_current} {p.unit}</p>
+              <ProductDetails details={p.details} className="mt-1" />
             </button>
           )) : (
             <p className="px-4 py-3 text-sm text-on-surface-variant">Sin resultados para "{query}"</p>
@@ -129,6 +138,51 @@ function BelowCostWarning({ items }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   MovementDateField — date (defaults to today) + "history only"
+   option for loading old movements
+───────────────────────────────────────────────────────────── */
+function MovementDateField({ date, onDateChange, historyOnly, onHistoryOnlyChange, id }) {
+  const isPast = date && date < todayISO();
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="block text-xs font-medium text-on-surface-variant mb-1.5 flex items-center gap-1.5">
+        <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">event</span> Fecha del movimiento
+      </label>
+      <input
+        type="date"
+        className="form-input"
+        id={id}
+        value={date}
+        max={todayISO()}
+        onChange={(e) => onDateChange(e.target.value || todayISO())}
+      />
+      {isPast && (
+        <label className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-container-low border border-outline-variant cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 accent-primary-container"
+            checked={historyOnly}
+            onChange={(e) => onHistoryOnlyChange(e.target.checked)}
+            id={`${id}-history-only`}
+          />
+          <span className="text-xs text-on-surface-variant leading-relaxed">
+            <span className="font-semibold text-on-surface block">Solo registrar en el historial (no modificar el stock)</span>
+            Marcalo si este movimiento antiguo ya está reflejado en el stock actual
+            (por ejemplo, si es anterior al último conteo de inventario).
+          </span>
+        </label>
+      )}
+    </div>
+  );
+}
+
+/** Human summary of the stock change returned by the API. */
+function stockChangeText(res) {
+  if (res.affects_stock === false) return 'solo historial, el stock no cambió';
+  return `stock ${res.stock_before} → ${res.stock_after}`;
+}
+
+/* ─────────────────────────────────────────────────────────────
    MovementsPage
 ───────────────────────────────────────────────────────────── */
 export default function MovementsPage() {
@@ -156,13 +210,28 @@ export default function MovementsPage() {
   const [multiDelivery,     setMultiDelivery]     = useState(''); // shared delivery cost for multi
   const [multiInvoice,      setMultiInvoice]      = useState(''); // invoice number for multi-entrada
 
+  /* ── Date (for loading old movements) — shared by both modes ── */
+  const [movementDate, setMovementDate] = useState(todayISO());
+  const [historyOnly,  setHistoryOnly]  = useState(false);
+  const isPastDate   = movementDate < todayISO();
+  const affectsStock = !(isPastDate && historyOnly);
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error,   setError]   = useState('');
 
-  useEffect(() => {
-    client.get('/products?active=true&page=1&limit=500').then((res) => setProducts(res.data.data));
+  /** Reloads products (and the selected one) so stock is always current. */
+  const loadProducts = useCallback(async () => {
+    const res = await client.get('/products?active=true&page=1&limit=500');
+    const list = res.data.data;
+    setProducts(list);
+    setSelectedProduct((sel) => (sel ? list.find((p) => p.id === sel.id) || null : sel));
+    setMultiProduct((sel) => (sel ? list.find((p) => p.id === sel.id) || null : sel));
+    return list;
   }, []);
+
+  useEffect(() => { loadProducts().catch(() => {}); }, [loadProducts]);
+  useRefreshOnFocus(() => { loadProducts().catch(() => {}); });
 
   /* ── Single form helpers ── */
   function handleChange(field, value) {
@@ -242,15 +311,17 @@ export default function MovementsPage() {
         quantity:                singleQty,
         unit_price:              singleUnitPrice,
         notes:                   form.notes,
-        invoice_number:          form.invoice_number,
+        invoice_number:          form.invoice_number.trim() || undefined,
         supplier_delivery_cost:  form.type === 'ENTRADA' ? singleDeliveryCost : undefined,
         delivery_cost_share:     form.type === 'ENTRADA' ? singleDeliveryCost : undefined, // 100% for single
+        movement_date:           movementDate,
+        affects_stock:           affectsStock,
       });
 
       const destLabel = form.type === 'SALIDA'
         ? (form.sale_type === 'interna' ? ' — Interna (Residentes)' : ' — Externa (Ajenos/Colaboradores)')
         : '';
-      setSuccess(`Movimiento registrado — ${form.type} de ${form.quantity} unidades${destLabel}`);
+      setSuccess(`Movimiento registrado — ${form.type} de ${form.quantity} unidades${destLabel} (${stockChangeText(res.data)})`);
 
       if (res.data.below_cost_warning) {
         setBelowCostWarnings([{
@@ -260,10 +331,7 @@ export default function MovementsPage() {
         }]);
       }
 
-      const updRes = await client.get('/products?active=true&page=1&limit=500');
-      setProducts(updRes.data.data);
-      const updated = updRes.data.data.find((p) => p.id === selectedProduct.id);
-      setSelectedProduct(updated || null);
+      await loadProducts();
       setForm((prev) => ({ ...prev, sale_type: '', quantity: '', unit_price: '', notes: '', invoice_number: '' }));
       setSingleDelivery('');
     } catch (err) {
@@ -276,16 +344,13 @@ export default function MovementsPage() {
   /* ── Submit: multi-entrada ── */
   async function handleSubmitMulti() {
     if (!multiItems.length) return;
-    if (!multiInvoice.trim()) {
-      setError('El número de factura es requerido');
-      return;
-    }
     setError('');
     setSuccess('');
     setBelowCostWarnings([]);
     setLoading(true);
     let registered   = 0;
     const warnings   = [];
+    const changes    = [];
     try {
       for (let i = 0; i < multiItemsWithCost.length; i++) {
         const item = multiItemsWithCost[i];
@@ -295,10 +360,13 @@ export default function MovementsPage() {
           quantity:               item.quantity,
           unit_price:             item.unit_price,
           notes:                  form.notes || undefined,
-          invoice_number:         multiInvoice.trim(),
+          invoice_number:         multiInvoice.trim() || undefined,
           supplier_delivery_cost: totalDeliveryCost,
           delivery_cost_share:    item.deliveryShare,
+          movement_date:          movementDate,
+          affects_stock:          affectsStock,
         });
+        changes.push(`${item.product.name}: ${stockChangeText(res.data)}`);
         if (res.data.below_cost_warning) {
           warnings.push({
             name:     item.product.name,
@@ -308,17 +376,18 @@ export default function MovementsPage() {
         }
         registered++;
       }
-      setSuccess(`${registered} entrada(s) registradas correctamente`);
+      setSuccess(`${registered} entrada(s) registradas correctamente — ${changes.join(' · ')}`);
       setBelowCostWarnings(warnings);
-      const updRes = await client.get('/products?active=true&page=1&limit=500');
-      setProducts(updRes.data.data);
       setMultiItems([]);
       setMultiDelivery('');
       setMultiInvoice('');
       setForm((prev) => ({ ...prev, notes: '' }));
     } catch (err) {
       setError(`Error en ítem ${registered + 1}: ${err.response?.data?.error || err.message}`);
+      // Items already registered must not be sent twice
+      setMultiItems((prev) => prev.slice(registered));
     } finally {
+      loadProducts().catch(() => {});
       setLoading(false);
     }
   }
@@ -328,12 +397,10 @@ export default function MovementsPage() {
     !loading &&
     selectedProduct &&
     form.quantity &&
-    form.invoice_number.trim() &&
     (form.type === 'ENTRADA' || form.sale_type);
   const canSubmitMulti =
     !loading &&
-    multiItems.length > 0 &&
-    multiInvoice.trim();
+    multiItems.length > 0;
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -419,6 +486,9 @@ export default function MovementsPage() {
                     <p className="text-on-surface-variant mb-0.5">Categoría</p>
                     <p className="text-on-surface leading-tight">{multiProduct.category_name}</p>
                   </div>
+                  {multiProduct.details?.length > 0 && (
+                    <ProductDetails details={multiProduct.details} className="col-span-4" />
+                  )}
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">
@@ -585,10 +655,18 @@ export default function MovementsPage() {
               </div>
             )}
 
+            {/* Date — multi */}
+            <MovementDateField
+              id="multi-movement-date"
+              date={movementDate} onDateChange={setMovementDate}
+              historyOnly={historyOnly} onHistoryOnlyChange={setHistoryOnly}
+            />
+
             {/* Invoice number — multi */}
             <div>
               <label className="block text-xs font-medium text-on-surface-variant mb-1.5 flex items-center gap-1.5">
-                <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">receipt_long</span> Número de factura *
+                <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">receipt_long</span> Número de factura
+                <span className="text-outline font-normal">(opcional)</span>
               </label>
               <input
                 type="text"
@@ -658,6 +736,9 @@ export default function MovementsPage() {
                     {selectedProduct.cost_price > 0 ? formatPYG(selectedProduct.cost_price) : '—'}
                   </p>
                 </div>
+                {selectedProduct.details?.length > 0 && (
+                  <ProductDetails details={selectedProduct.details} className="col-span-4" />
+                )}
               </div>
             )}
 
@@ -690,10 +771,18 @@ export default function MovementsPage() {
               </div>
             )}
 
+            {/* Date */}
+            <MovementDateField
+              id="movement-date"
+              date={movementDate} onDateChange={setMovementDate}
+              historyOnly={historyOnly} onHistoryOnlyChange={setHistoryOnly}
+            />
+
             {/* Invoice number */}
             <div>
               <label className="block text-xs font-medium text-on-surface-variant mb-1.5 flex items-center gap-1.5">
-                <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">receipt_long</span> Número de factura *
+                <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">receipt_long</span> Número de factura
+                <span className="text-outline font-normal">(opcional)</span>
               </label>
               <input
                 type="text"
@@ -701,7 +790,6 @@ export default function MovementsPage() {
                 placeholder="Ej. 001-001-0001234"
                 value={form.invoice_number}
                 onChange={(e) => handleChange('invoice_number', e.target.value)}
-                required
                 id="movement-invoice-number"
               />
             </div>

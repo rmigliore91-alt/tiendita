@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import client from '../api/client';
 import { formatPYG } from '../utils/formatters';
+import { detailsText } from '../components/ui/ProductDetails';
+import useRefreshOnFocus from '../hooks/useRefreshOnFocus';
 
 /* ─── Delivery cost formula ─────────────────────────────────────────────── */
 function calcDeliveryCost(km) {
@@ -345,10 +347,14 @@ export default function BudgetPage() {
   const [showConfirmModal, setShowConfirmModal]   = useState(false);
   const [confirming, setConfirming]               = useState(false);
 
-  useEffect(() => {
+  const loadProducts = useCallback(() => {
     client.get('/products?active=true&page=1&limit=500')
-      .then((res) => setProducts(res.data.data));
+      .then((res) => setProducts(res.data.data))
+      .catch(() => {});
   }, []);
+
+  useEffect(() => { loadProducts(); }, [loadProducts]);
+  useRefreshOnFocus(loadProducts);
 
   /* ── Reset budget state when items cleared ── */
   function resetBudget() {
@@ -489,6 +495,7 @@ export default function BudgetPage() {
       setBudgetConfirmed(true);
       setShowConfirmModal(false);
       setSaveMsg(`✓ Venta confirmada — stock descontado correctamente`);
+      loadProducts();
     } catch (err) {
       setSaveMsg('Error al confirmar venta: ' + (err.response?.data?.error || err.message));
       setShowConfirmModal(false);
@@ -606,7 +613,9 @@ export default function BudgetPage() {
               >
                 <option value="">Seleccionar…</option>
                 {products.map((p) => (
-                  <option key={p.id} value={p.id}>[{p.sku}] {p.name}</option>
+                  <option key={p.id} value={p.id}>
+                    [{p.sku}] {p.name}{p.details?.length ? ` — ${detailsText(p.details)}` : ''} (stock: {p.stock_current})
+                  </option>
                 ))}
               </select>
             </div>

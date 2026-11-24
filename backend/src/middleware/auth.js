@@ -45,4 +45,16 @@ function requireOperatorOrAdmin(req, res, next) {
   next();
 }
 
-module.exports = { verifyJWT, requireAdmin, requireOperatorOrAdmin };
+/**
+ * Middleware factory: allow only the given roles. Must be used after verifyJWT.
+ */
+function requireRoles(...roles) {
+  return (req, res, next) => {
+    if (!roles.includes(req.user?.role)) {
+      return res.status(403).json({ error: 'Acceso denegado: su rol no tiene permiso para esta acción' });
+    }
+    next();
+  };
+}
+
+module.exports = { verifyJWT, requireAdmin, requireOperatorOrAdmin, requireRoles };

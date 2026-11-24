@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import client from '../api/client';
 import { StatCard } from '../components/dashboard/StatCard';
@@ -6,6 +6,7 @@ import MovementFeed from '../components/dashboard/MovementFeed';
 import StockBadge from '../components/ui/StockBadge';
 import { formatPYG } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
+import useRefreshOnFocus from '../hooks/useRefreshOnFocus';
 
 /** Returns days until expiry (negative = already expired). */
 function daysUntilExpiry(expiryDate) {
@@ -62,8 +63,7 @@ export default function DashboardPage() {
   const [movements, setMovements] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       try {
         const [statsRes, movRes] = await Promise.all([
           client.get('/products/dashboard-stats'),
@@ -78,9 +78,11 @@ export default function DashboardPage() {
       } finally {
         setLoading(false);
       }
-    }
-    load();
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+  // Stock can change from other tabs / users: refresh when coming back
+  useRefreshOnFocus(load);
 
   if (loading) {
     return (

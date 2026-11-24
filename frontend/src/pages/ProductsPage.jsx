@@ -2,7 +2,15 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/ui/Modal';
+import ProductDetails from '../components/ui/ProductDetails';
+import useRefreshOnFocus from '../hooks/useRefreshOnFocus';
 import { formatPYG } from '../utils/formatters';
+
+// Suggested names for product characteristics (free text is also allowed)
+const DETAIL_SUGGESTIONS = [
+  'Talle', 'Marca', 'Presentación', 'Unidades por paquete', 'Color',
+  'Sabor', 'Tamaño', 'Material', 'Peso', 'Absorción',
+];
 
 // ─── SortableHeader ────────────────────────────────────────────────────────
 function SortableHeader({ label, field, sortBy, sortOrder, onSort, className = '' }) {
@@ -84,6 +92,8 @@ const EMPTY_FORM = {
   cost_price: 0,
   sale_price: 0,
   expiry_date: '',
+  description: '',
+  details: [],
 };
 
 const PAGE_SIZE = 20;
@@ -91,7 +101,9 @@ const PAGE_SIZE = 20;
 // ─── component ─────────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isMarketing } = useAuth();
+  // Admin and marketing can edit products; only admin creates / (de)activates
+  const canEdit = isAdmin || isMarketing;
 
   // Data
   const [products, setProducts] = useState([]);
@@ -130,8 +142,8 @@ export default function ProductsPage() {
   }, [searchInput]);
 
   // ── fetch products ────────────────────────────────────────────────────────
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (silent !== true) setLoading(true);
     setError('');
     try {
       const params = new URLSearchParams({ page, limit: PAGE_SIZE });
@@ -157,6 +169,8 @@ export default function ProductsPage() {
   }, [page, search, categoryId, sortBy, sortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { load(); }, [load]);
+  // Stock can change from other tabs / users: refresh when coming back
+  useRefreshOnFocus(() => load(true));
 
   // ── sort handler ──────────────────────────────────────────────────────────
   function handleSort(field) {
@@ -199,9 +213,25 @@ export default function ProductsPage() {
       cost_price: product.cost_price,
       sale_price: product.sale_price,
       expiry_date: product.expiry_date ? product.expiry_date.split('T')[0] : '',
+      description: product.description || '',
+      details: Array.isArray(product.details) ? product.details.map((d) => ({ ...d })) : [],
     });
     setFormError('');
     setModalOpen(true);
+  }
+
+  // ── characteristics (details) helpers ───────────────────────────────────
+  function addDetail() {
+    setForm((p) => ({ ...p, details: [...p.details, { label: '', value: '' }] }));
+  }
+  function updateDetail(idx, field, value) {
+    setForm((p) => ({
+      ...p,
+      details: p.details.map((d, i) => (i === idx ? { ...d, [field]: value } : d)),
+    }));
+  }
+  function removeDetail(idx) {
+    setForm((p) => ({ ...p, details: p.details.filter((_, i) => i !== idx) }));
   }
 
   async function handleSave(e) {
@@ -210,7 +240,9 @@ export default function ProductsPage() {
     setFormError('');
     try {
       if (editing) {
-        await client.put(`/products/${editing.id}`, form);
+        // Stock is never sent on edit: it only changes through movements
+        const { stock_current, ...data } = form; // eslint-disable-line no-unused-vars
+        await client.put(`/products/${editing.id}`, data);
       } else {
         await client.post('/products', form);
       }
@@ -275,7 +307,7 @@ export default function ProductsPage() {
               type="text"
               id="product-search"
               className="form-input pl-9"
-              placeholder="Buscar por nombre o SKU…"
+              placeholder="Buscar por nombre, SKU o característica (ej. talle M)…"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
@@ -339,13 +371,13 @@ export default function ProductsPage() {
                   <SortableHeader label="Precio Venta (₲)" field="sale_price" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <SortableHeader label="Vencimiento"   field="expiry_date"   sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-center" />
                   <SortableHeader label="Estado"        field="active"        sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-center" />
-                  {isAdmin && <th className="text-center">Acciones</th>}
+                  {canEdit && <th className="text-center">Acciones</th>}
                 </tr>
               </thead>
               <tbody>
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 10 : 9} className="text-center py-14 text-on-surface-variant">
+                    <td colSpan={canEdit ? 10 : 9} className="text-center py-14 text-on-surface-variant">
                       <span className="material-symbol text-[36px] text-outline block mb-2" aria-hidden="true">search_off</span>
                       No se encontraron productos con los filtros aplicados
                     </td>
@@ -364,7 +396,20 @@ export default function ProductsPage() {
 
                         {/* Name */}
                         <td>
-                          <p className="font-medium text-on-surface text-sm leading-tight min-w-[10rem] max-w-xs">{p.name}</p>
+                          <div className="min-w-[10rem] max-w-xs">
+                            <button
+                              type="button"
+                              onClick={canEdit ? () => openEdit(p) : undefined}
+                              className={`font-medium text-on-surface text-sm leading-tight text-left ${canEdit ? 'hover:text-primary-container hover:underline' : 'cursor-default'}`}
+                              title={canEdit ? 'Editar producto' : undefined}
+                            >
+                              {p.name}
+                            </button>
+                            {p.description && (
+                              <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-2">{p.description}</p>
+                            )}
+                            <ProductDetails details={p.details} className="mt-1" />
+                          </div>
                         </td>
 
                         {/* Category */}
@@ -412,8 +457,8 @@ export default function ProductsPage() {
                           </span>
                         </td>
 
-                        {/* Actions — admin only */}
-                        {isAdmin && (
+                        {/* Actions — edit: admin + marketing · (de)activate: admin */}
+                        {canEdit && (
                           <td className="text-center">
                             <div className="flex items-center justify-center gap-1">
                               <button
@@ -426,6 +471,7 @@ export default function ProductsPage() {
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                               </button>
+                              {isAdmin && (
                               <button
                                 onClick={() => toggleActive(p)}
                                 className={`p-1.5 rounded-lg transition-colors ${
@@ -445,6 +491,7 @@ export default function ProductsPage() {
                                   )}
                                 </svg>
                               </button>
+                              )}
                             </div>
                           </td>
                         )}
@@ -548,6 +595,17 @@ export default function ProductsPage() {
               </div>
             )}
 
+            {/* Stock current (edit: read only) */}
+            {editing && (
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Stock Actual</label>
+                <div className="form-input bg-surface-container-low text-on-surface-variant flex items-center justify-between">
+                  <span className="font-semibold text-on-surface">{editing.stock_current} {editing.unit}</span>
+                  <span className="text-[11px]">Se modifica con movimientos</span>
+                </div>
+              </div>
+            )}
+
             {/* Stock minimum */}
             <div>
               <label className="block text-xs font-medium text-on-surface-variant mb-1.5">Stock Mínimo</label>
@@ -593,6 +651,72 @@ export default function ProductsPage() {
                   </p>
                 ) : null;
               })()}
+            </div>
+
+            {/* Description */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
+                Descripción <span className="text-outline font-normal">(opcional)</span>
+              </label>
+              <textarea
+                className="form-input resize-none"
+                rows={2}
+                id="product-description"
+                value={form.description}
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="Ej. Pañal descartable para adultos, uso nocturno"
+              />
+            </div>
+
+            {/* Characteristics */}
+            <div className="sm:col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-on-surface-variant flex items-center gap-1.5">
+                  <span className="material-symbol text-[16px] align-[-3px] text-outline" aria-hidden="true">tune</span>
+                  Características <span className="text-outline font-normal">(talle, marca, presentación…)</span>
+                </label>
+                <button type="button" onClick={addDetail} className="btn-secondary py-1 px-2.5 text-xs" id="btn-add-detail">
+                  + Agregar
+                </button>
+              </div>
+              <datalist id="detail-suggestions">
+                {DETAIL_SUGGESTIONS.map((d) => <option key={d} value={d} />)}
+              </datalist>
+              {form.details.length === 0 ? (
+                <p className="text-xs text-outline">Sin características. Ej.: Talle → M · Unidades por paquete → 20</p>
+              ) : (
+                form.details.map((d, idx) => (
+                  <div key={idx} className="grid grid-cols-[1fr_1.4fr_auto] gap-2">
+                    <input
+                      type="text"
+                      className="form-input"
+                      list="detail-suggestions"
+                      placeholder="Nombre (ej. Talle)"
+                      value={d.label}
+                      maxLength={60}
+                      onChange={(e) => updateDetail(idx, 'label', e.target.value)}
+                      aria-label={`Nombre de la característica ${idx + 1}`}
+                    />
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Valor (ej. M)"
+                      value={d.value}
+                      maxLength={200}
+                      onChange={(e) => updateDetail(idx, 'value', e.target.value)}
+                      aria-label={`Valor de la característica ${idx + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeDetail(idx)}
+                      className="p-2 rounded-lg hover:bg-error-container text-error transition-colors"
+                      title="Quitar característica"
+                    >
+                      <span className="material-symbol text-[18px]" aria-hidden="true">close</span>
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

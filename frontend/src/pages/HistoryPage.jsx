@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import client from '../api/client';
 import Pagination from '../components/ui/Pagination';
 import { formatPYG, formatDateTime } from '../utils/formatters';
+import useRefreshOnFocus from '../hooks/useRefreshOnFocus';
 
 /* ─── Product search combobox for filters ────────────────────── */
 function ProductSearchFilter({ products, value, onChange }) {
@@ -152,8 +153,8 @@ export default function HistoryPage() {
     return params;
   }, [filters, page]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (silent !== true) setLoading(true);
     try {
       const [movRes, catRes, prodRes, userRes] = await Promise.all([
         client.get(`/movements?${buildParams()}`),
@@ -174,6 +175,7 @@ export default function HistoryPage() {
   }, [buildParams]); // eslint-disable-line
 
   useEffect(() => { load(); }, [load]);
+  useRefreshOnFocus(() => load(true));
 
   function handleFilter(field, value) {
     setFilters((prev) => ({ ...prev, [field]: value }));
@@ -423,7 +425,10 @@ export default function HistoryPage() {
                       <td className="text-on-surface-variant text-xs whitespace-nowrap">{formatDateTime(m.created_at)}</td>
                       <td>
                         <p className="text-on-surface text-sm font-medium min-w-[11rem]">{m.product_name}</p>
-                        <p className="text-on-surface-variant text-xs">{m.sku}</p>
+                        <p className="text-on-surface-variant text-xs">
+                          {m.sku}
+                          {m.invoice_number && <> · Fact. {m.invoice_number}</>}
+                        </p>
                       </td>
                       <td className="text-on-surface-variant text-xs">{m.category_name}</td>
                       <td className="text-center">
@@ -432,6 +437,12 @@ export default function HistoryPage() {
                         }`}>
                           {m.type === 'ENTRADA' ? '↑' : '↓'} {m.type}
                         </span>
+                        {m.affects_stock === false && (
+                          <span className="block mt-1 text-[11px] text-on-surface-variant whitespace-nowrap"
+                            title="Movimiento antiguo cargado solo como historial: no modificó el stock">
+                            Solo historial
+                          </span>
+                        )}
                       </td>
                       <td className="text-center">
                         {m.type === 'SALIDA' && m.sale_type ? (

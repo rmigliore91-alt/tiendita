@@ -1,5 +1,5 @@
 const express = require('express');
-const { verifyJWT, requireAdmin } = require('../middleware/auth');
+const { verifyJWT, requireAdmin, requireRoles } = require('../middleware/auth');
 const {
   listProducts, getProduct, createProduct, updateProduct,
   deactivateProduct, activateProduct, getDashboardStats,
@@ -13,7 +13,8 @@ router.get('/dashboard-stats', getDashboardStats);
 router.get('/', listProducts);
 router.get('/:id', getProduct);
 router.post('/', requireAdmin, createProduct);
-router.put('/:id', requireAdmin, updateProduct);
+// Admin and marketing can edit product data (stock only changes via movements)
+router.put('/:id', requireRoles('admin', 'marketing'), updateProduct);
 router.patch('/:id/deactivate', requireAdmin, deactivateProduct);
 router.patch('/:id/activate', requireAdmin, activateProduct);
 

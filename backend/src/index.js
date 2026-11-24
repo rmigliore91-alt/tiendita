@@ -20,6 +20,12 @@ const isProd = process.env.NODE_ENV === 'production';
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+// API data (stock, movements…) must never be served from a cache
+app.use('/api', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 // ── API Routes ──────────────────────────────────────────────
 app.use('/api/auth',       authRoutes);
 app.use('/api/users',      usersRoutes);

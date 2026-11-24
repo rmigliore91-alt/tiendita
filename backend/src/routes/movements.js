@@ -11,7 +11,7 @@ router.use(verifyJWT);
 router.get('/export', exportCSV);
 router.get('/recent', recentMovements);
 router.get('/', listMovements);
-// Marketing role cannot create movements (stock in/out)
+// Admin, operator and marketing can register stock movements
 router.post('/', requireOperatorOrAdmin, createMovement);
 
 module.exports = router;
